@@ -3,6 +3,36 @@
 //
 
 #include "RubiksCube.hpp"
+#include <iostream>
+
+bool RubiksCube::handleMap(int depth) {
+    auto hash = this->hash();
+    // std::cout << hash << "\n";
+
+    auto prevDepth = cubeDict.find(hash);
+
+    if (prevDepth != cubeDict.end()) {
+        if (cubeDict[hash] <= depth) {
+
+            cacheHits++;
+            return true;
+        }
+    } else {
+        cubeDict[hash] = depth;
+    }
+
+    return false;
+}
+
+std::string RubiksCube::hash() {
+    std::string hash;
+    for (int v : cube)
+    {
+        hash += std::to_string(v);
+    }
+
+    return hash;
+}
 
 void RubiksCube::turn(int face, int rotations) {
     switch (face) {
@@ -49,13 +79,13 @@ void RubiksCube::turnWhite(int rotations) {
 void RubiksCube::turnBlue(int rotations) {
     switch (rotations) {
         case 1: {
-            RubiksCube::turnWhite1();
+            RubiksCube::turnBlue1();
         } break;
         case 2: {
-            RubiksCube::turnWhite2();
+            RubiksCube::turnBlue2();
         } break;
         case 3: {
-            RubiksCube::turnWhite3();
+            RubiksCube::turnBlue3();
         } break;
     }
 }
@@ -63,13 +93,13 @@ void RubiksCube::turnBlue(int rotations) {
 void RubiksCube::turnRed(int rotations) {
     switch (rotations) {
         case 1: {
-            RubiksCube::turnWhite1();
+            RubiksCube::turnRed1();
         } break;
         case 2: {
-            RubiksCube::turnWhite2();
+            RubiksCube::turnRed2();
         } break;
         case 3: {
-            RubiksCube::turnWhite3();
+            RubiksCube::turnRed3();
         } break;
     }
 }
@@ -77,13 +107,13 @@ void RubiksCube::turnRed(int rotations) {
 void RubiksCube::turnGreen(int rotations) {
     switch (rotations) {
         case 1: {
-            RubiksCube::turnWhite1();
+            RubiksCube::turnGreen1();
         } break;
         case 2: {
-            RubiksCube::turnWhite2();
+            RubiksCube::turnGreen2();
         } break;
         case 3: {
-            RubiksCube::turnWhite3();
+            RubiksCube::turnGreen3();
         } break;
     }
 }
@@ -91,13 +121,13 @@ void RubiksCube::turnGreen(int rotations) {
 void RubiksCube::turnOrange(int rotations) {
     switch (rotations) {
         case 1: {
-            RubiksCube::turnWhite1();
+            RubiksCube::turnOrange1();
         } break;
         case 2: {
-            RubiksCube::turnWhite2();
+            RubiksCube::turnOrange2();
         } break;
         case 3: {
-            RubiksCube::turnWhite3();
+            RubiksCube::turnOrange3();
         } break;
     }
 }
@@ -105,13 +135,13 @@ void RubiksCube::turnOrange(int rotations) {
 void RubiksCube::turnYellow(int rotations) {
     switch (rotations) {
         case 1: {
-            RubiksCube::turnWhite1();
+            RubiksCube::turnYellow1();
         } break;
         case 2: {
-            RubiksCube::turnWhite2();
+            RubiksCube::turnYellow2();
         } break;
         case 3: {
-            RubiksCube::turnWhite3();
+            RubiksCube::turnYellow3();
         } break;
     }
 }
