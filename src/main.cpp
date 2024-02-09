@@ -1,21 +1,31 @@
 #include <iostream>
 #include <chrono>
-#include <random>
-#include <array>
 
 #include "RubiksCube.hpp"
 
-int getRandomIntInRange(int a, int b) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> distribution(a, b);
-
-    return distribution(gen);
-}
+int globalStates = 0;
+int maxLevel = 0;
+std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 1000000000>>> globalStartTime;
 
 void execEveryMove(RubiksCube &cube, int depth, Move &prevMove, Move &doublePrevMove)
 {
-    if (depth == 0) {return;}
+    int level = cube.solvedWhiteCross();
+
+    if (level) {
+        level += cube.numCornerSolved();
+
+        if (level > maxLevel) {
+            auto end = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - globalStartTime);
+            std::cout << "Reached level: " << level << " after " << duration.count() / 1000 << " milliseconds" << "\n";
+            maxLevel = level;
+        }
+    }
+
+    if (depth == 0) {
+        globalStates++;
+        return;
+    }
 
     for (Move m : cube.everyMove)
     {
@@ -31,19 +41,49 @@ void execEveryMove(RubiksCube &cube, int depth, Move &prevMove, Move &doublePrev
     }
 }
 
+void testMoveSpeed() {
+    RubiksCube cube;
+
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < 10000000; i++) {
+        cube.turn(3, 2);
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "Time taken by function: " << duration.count() << " microseconds" << std::endl;
+}
+
 int main() {
     RubiksCube myCube;
+    myCube.shuffle(100);
 
     Move m0 = {0, 0};
     Move m1 = {0, 0};
 
     auto start = std::chrono::high_resolution_clock::now();
+    globalStartTime = start;
 
     execEveryMove(myCube, 8, m0, m1);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Time taken by function: " << duration.count() / 1000 / 1000 << " seconds" << std::endl;
+    std::cout << "Time taken by function: " << duration.count() / 1000 << " milliseconds" << std::endl;
+    std::cout << "States visited: " << globalStates / 1000 / 1000 << " million." << std::endl;
 
     return 0;
+}
+
+int mainOld() {
+    RubiksCube myCube;
+
+    std::cout << "White cross: " << myCube.solvedWhiteCross() << "\n";
+    std::cout << "Num corners: " << myCube.numCornerSolved() << "\n";
+
+    myCube.turn(1, 1);
+    myCube.turn(5, 1);
+    myCube.turn(1, 3);
+
+    std::cout << "White cross: " << myCube.solvedWhiteCross() << "\n";
+    std::cout << "Num corners: " << myCube.numCornerSolved() << "\n";
+
 }
