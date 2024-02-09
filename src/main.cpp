@@ -35,12 +35,6 @@ void execEveryMove(RubiksCube &cube, int depth, Move &prevMove, Move &doublePrev
             continue;
         }
 
-        if (m.face > 2) {
-            if (cube.prevSymmetryLeftRight[m.face] == prevMove.face) {
-                continue;
-            }
-        }
-
         cube.turn(m.face, m.rotations);
         execEveryMove(cube, depth - 1, m, prevMove);
         cube.turn(m.face, 4 - m.rotations);
@@ -60,6 +54,9 @@ void testMoveSpeed() {
 }
 
 int main() {
+    testMoveSpeed();
+    return 69;
+
     RubiksCube myCube;
     myCube.shuffle(100);
 
