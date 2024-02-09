@@ -6,6 +6,36 @@
 #include <random>
 
 #include "RubiksCube.hpp"
+#include <iostream>
+
+bool RubiksCube::handleMap(int depth) {
+    auto hash = this->hash();
+    // std::cout << hash << "\n";
+
+    auto prevDepth = cubeDict.find(hash);
+
+    if (prevDepth != cubeDict.end()) {
+        if (cubeDict[hash] <= depth) {
+
+            cacheHits++;
+            return true;
+        }
+    } else {
+        cubeDict[hash] = depth;
+    }
+
+    return false;
+}
+
+std::string RubiksCube::hash() {
+    std::string hash;
+    for (int v : cube)
+    {
+        hash += std::to_string(v);
+    }
+
+    return hash;
+}
 
 std::string RubiksCube::hash() {
     std::string hashString;

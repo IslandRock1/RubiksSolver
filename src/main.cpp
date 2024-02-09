@@ -35,6 +35,12 @@ void execEveryMove(RubiksCube &cube, int depth, Move &prevMove, Move &doublePrev
             continue;
         }
 
+        if (m.face > 2) {
+            if (cube.prevSymmetryLeftRight[m.face] == prevMove.face) {
+                continue;
+            }
+        }
+
         cube.turn(m.face, m.rotations);
         execEveryMove(cube, depth - 1, m, prevMove);
         cube.turn(m.face, 4 - m.rotations);
@@ -57,13 +63,13 @@ int main() {
     RubiksCube myCube;
     myCube.shuffle(100);
 
-    Move m0 = {0, 0};
-    Move m1 = {0, 0};
+    Move m0 = {7, 0};
+    Move m1 = {7, 0};
 
     auto start = std::chrono::high_resolution_clock::now();
     globalStartTime = start;
 
-    execEveryMove(myCube, 8, m0, m1);
+    execEveryMove(myCube, 7, m0, m1);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -73,17 +79,3 @@ int main() {
     return 0;
 }
 
-int mainOld() {
-    RubiksCube myCube;
-
-    std::cout << "White cross: " << myCube.solvedWhiteCross() << "\n";
-    std::cout << "Num corners: " << myCube.numCornerSolved() << "\n";
-
-    myCube.turn(1, 1);
-    myCube.turn(5, 1);
-    myCube.turn(1, 3);
-
-    std::cout << "White cross: " << myCube.solvedWhiteCross() << "\n";
-    std::cout << "Num corners: " << myCube.numCornerSolved() << "\n";
-
-}
