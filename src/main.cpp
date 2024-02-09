@@ -3,9 +3,25 @@
 
 #include "RubiksCube.hpp"
 
-int globalStates = 0;
+long long int globalStates = 0;
 int maxLevel = 0;
 std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 1000000000>>> globalStartTime;
+
+bool prune(Move &currentMove, Move &prevMove, Move &doublePrevMove) {
+    if (currentMove.face == prevMove.face) { return true;}
+
+    if ((currentMove.face == doublePrevMove.face) && (RubiksCube::oppositeFace[currentMove.face] == prevMove.face)) {
+        return true;
+    }
+
+    if (currentMove.face < 3) {
+        if (prevMove.face == RubiksCube::oppositeFace[currentMove.face]) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 void execEveryMove(RubiksCube &cube, int depth, Move &prevMove, Move &doublePrevMove)
 {
@@ -29,11 +45,7 @@ void execEveryMove(RubiksCube &cube, int depth, Move &prevMove, Move &doublePrev
 
     for (Move m : cube.everyMove)
     {
-        if (m == prevMove) { continue;}
-
-        if ((m.face == doublePrevMove.face) && (cube.oppositeFace[m.face] == prevMove.face)) {
-            continue;
-        }
+        if (prune(m, prevMove, doublePrevMove)) { continue;}
 
         cube.turn(m.face, m.rotations);
         execEveryMove(cube, depth - 1, m, prevMove);
@@ -54,14 +66,11 @@ void testMoveSpeed() {
 }
 
 int main() {
-    testMoveSpeed();
-    return 69;
-
     RubiksCube myCube;
     myCube.shuffle(100);
 
-    Move m0 = {7, 0};
-    Move m1 = {7, 0};
+    Move m0 = {7, 0}; //Invalid to ensure no collision
+    Move m1 = {7, 0}; //Invalid to ensure no collision
 
     auto start = std::chrono::high_resolution_clock::now();
     globalStartTime = start;
