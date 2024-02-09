@@ -7,6 +7,8 @@
 
 #include "RubiksCube.hpp"
 
+std::array<int, 3> RubiksCube::oppositeFace = {5, 4, 3};
+
 void RubiksCube::print() {
     int space = 0;
 

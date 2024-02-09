@@ -23,10 +23,9 @@ public:
     std::array<std::uint_fast8_t, 48> cube = {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3};
     void turn(int face, int rotations);
     std::array<Move, 18> everyMove = {{{0, 1}, {0, 2}, {0, 3}, {1, 1}, {1, 2}, {1, 3}, {2, 1}, {2, 2}, {2, 3}, {3, 1}, {3, 2}, {3, 3}, {4, 1}, {4, 2}, {4, 3}, {5, 1}, {5, 2}, {5, 3}}};
-    std::array<int, 6> oppositeFace = {5, 4, 3, 2, 1, 0};
 
     void print();
-
+    static std::array<int, 3> oppositeFace;
     bool solvedWhiteCross();
     int numCornerSolved();
     void shuffle(int numMoves);
