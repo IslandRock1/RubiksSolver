@@ -5,7 +5,6 @@
 #ifndef RUBIKSSOLVER_RUBIKSCUBE_HPP
 #define RUBIKSSOLVER_RUBIKSCUBE_HPP
 
-#include <cstdint>
 #include <array>
 #include <string>
 
@@ -20,15 +19,21 @@ struct Move{
 
 class RubiksCube {
 public:
-    std::array<std::uint_fast8_t, 48> cube = {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3};
+    std::array<short, 48> cube = {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3};
     void turn(int face, int rotations);
     std::array<Move, 18> everyMove = {{{0, 1}, {0, 2}, {0, 3}, {1, 1}, {1, 2}, {1, 3}, {2, 1}, {2, 2}, {2, 3}, {3, 1}, {3, 2}, {3, 3}, {4, 1}, {4, 2}, {4, 3}, {5, 1}, {5, 2}, {5, 3}}};
 
     void print();
     static std::array<int, 3> oppositeFace;
+    static std::array<int, 6> oppositeFaceAll;
+
+
     bool solvedWhiteCross();
     int numCornerSolved();
     void shuffle(int numMoves);
+
+    std::array<unsigned int, 4> hash();
+    static long convertBase5ToBin(int a, int b, int c);
 
 private:
     bool solvedRBCorner();

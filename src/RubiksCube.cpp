@@ -4,10 +4,31 @@
 
 #include <iostream>
 #include <random>
+#include <bitset>
 
 #include "RubiksCube.hpp"
 
 std::array<int, 3> RubiksCube::oppositeFace = {5, 4, 3};
+std::array<int, 6> RubiksCube::oppositeFaceAll = {5, 4, 3, 2, 1, 0};
+
+long RubiksCube::convertBase5ToBin(int a, int b, int c) {
+    return a * 36 + b * 6 + c;
+}
+std::array<unsigned int, 4> RubiksCube::hash() {
+    std::array<unsigned int, 4> vals;
+
+    for (int i = 0; i < 4; i++) {
+        unsigned int val = 0;
+        for (int k = 0; k < 4; k++) {
+            auto convert = convertBase5ToBin(cube[12 * i + 3 * k + 0], cube[12 * i + 3 * k + 1], cube[12 * i + 3 * k + 2]);
+            val = val << 8;
+            val |= convert;
+        }
+        vals[i] = val;
+    }
+
+    return vals;
+}
 
 void RubiksCube::print() {
     int space = 0;
