@@ -10,17 +10,170 @@
 
 std::array<int, 3> RubiksCube::oppositeFace = {5, 4, 3};
 std::array<int, 6> RubiksCube::oppositeFaceAll = {5, 4, 3, 2, 1, 0};
+std::array<std::vector<int>, 48> RubiksCube::physicalPieces = {{
+       {10, 45},        // 0
+       {46},        // 1
+       {32, 47},// 2
+       {12},        // 3
+       {35},        // 4
+       {15, 16},// 5
+       {17},        // 6
+       {18, 37},// 7
+       {29, 40},// 8
+       {43},        // 9
+       {0, 45}, // 10
+       {27},        // 11
+       {3},         // 12
+       {21, 24},// 13
+       {19},        // 14
+       {5, 16}, // 15
+       {5, 15}, // 16
+       {6},         // 17
+       {7, 37}, // 18
+       {14},        // 19
+       {38},        // 20
+       {13, 24},// 21
+       {25},        // 22
+       {26, 39},// 23
+       {13, 21},// 24
+       {22},        // 25
+       {23, 39},// 26
+       {11},        // 27
+       {36},        // 28
+       {8, 40}, // 29
+       {41},        // 30
+       {34, 42},// 31
+       {2, 47}, // 32
+       {44},        // 33
+       {31, 42},// 34
+       {4},         // 35
+       {28},        // 36
+       {7, 18}, // 37
+       {20},        // 38
+       {23, 26},// 39
+       {8, 29}, // 40
+       {30},        // 41
+       {31, 34},// 42
+       {9},         // 43
+       {33},        // 44
+       {0, 10}, // 45
+       {1},         // 46
+       {2, 32}  // 47
+}};
+
 
 long RubiksCube::convertBase5ToBin(int a, int b, int c) {
+    // std::cout << "Inputs: " << a << ", " << b << ", " << c << "\n";
+
     return a * 36 + b * 6 + c;
 }
-std::array<unsigned int, 4> RubiksCube::hash() {
-    std::array<unsigned int, 4> vals;
+
+std::array<unsigned int, 4> RubiksCube::hashCrossAnd2Corners() {
+    std::array<unsigned int, 4> vals = {0, 0, 0, 0};
 
     for (int i = 0; i < 4; i++) {
         unsigned int val = 0;
         for (int k = 0; k < 4; k++) {
-            auto convert = convertBase5ToBin(cube[12 * i + 3 * k + 0], cube[12 * i + 3 * k + 1], cube[12 * i + 3 * k + 2]);
+
+            auto ix0 = 12 * i + 3 * k + 0;
+            auto ix1 = ix0 + 1;
+            auto ix2 = ix0 + 2;
+
+            auto face0 = cube[ix0];
+            auto face1 = cube[ix1];
+            auto face2 = cube[ix2];
+
+            std::array<int, 3> indices = {ix0, ix1, ix2};
+            std::array<short, 3> faces = {face0, face1, face2};
+            std::array<int, 3> output = {0, 0, 0};
+
+            for (int newIx = 0; newIx < 3; newIx++) {
+                auto piece0 = physicalPieces[indices[newIx]];
+                output[newIx] = faces[newIx];
+
+                if (piece0.size() > 1) {
+                    if ((cube[piece0[0]] == 5) || (cube[piece0[1]] == 5)) {
+                        output[newIx] = 5;
+                    } else if (face0 == 5) {
+                        output[newIx] = 5;
+                    } else {
+                        auto white = (face0 == 0) + (cube[piece0[0]] == 0) + (cube[piece0[1]] == 0);
+                        auto orange = (face0 == 4) + (cube[piece0[0]] == 4) + (cube[piece0[1]] == 4);
+                        auto blue = (face0 == 2) + (cube[piece0[0]] == 2) + (cube[piece0[1]] == 2);
+                        auto green = (face0 == 3) + (cube[piece0[0]] == 3) + (cube[piece0[0]] == 3);
+
+                        if ((white + orange + blue + green) == 3) {
+                            output[newIx] = 5;
+                        }
+                    }
+
+                } else {
+                    if (cube[piece0[0]] == 5) {
+                        output[newIx] = 5;
+                    } else if (face0 == 5) {
+                        output[newIx] = 5;
+                    } else {
+                        auto orange = (face0 == 4) + (cube[piece0[0]] == 4);
+                        auto blue = (face0 == 2) + (cube[piece0[0]] == 2);
+                        auto green = (face0 == 3) + (cube[piece0[0]] == 3);
+
+                        if ((orange + blue + green) == 2) {
+                            output[newIx] = 5;
+                        }
+                    }
+                }
+            }
+
+            auto convert = convertBase5ToBin(output[0], output[1], output[2]);
+            val = val << 8;
+            val |= convert;
+        }
+        vals[i] = val;
+    }
+
+    return vals;
+}
+
+std::array<unsigned int, 4> RubiksCube::hashFirstTwoLayers() {
+    std::array<unsigned int, 4> vals = {0, 0, 0, 0};
+
+    for (int i = 0; i < 4; i++) {
+        unsigned int val = 0;
+        for (int k = 0; k < 4; k++) {
+
+            auto ix0 = 12 * i + 3 * k + 0;
+            auto ix1 = ix0 + 1;
+            auto ix2 = ix0 + 2;
+
+            auto face0 = cube[ix0];
+            auto face1 = cube[ix1];
+            auto face2 = cube[ix2];
+
+            auto piece0 = physicalPieces[ix0];
+            short output0 = face0;
+            for (auto tmp : piece0) {
+                if (cube[tmp] == 5) {
+                    output0 = 5;
+                }
+            }
+
+            auto piece1 = physicalPieces[ix1];
+            short output1 = face1;
+            for (auto tmp : piece1) {
+                if (cube[tmp] == 5) {
+                    output1 = 5;
+                }
+            }
+
+            auto piece2 = physicalPieces[ix2];
+            short output2 = face2;
+            for (auto tmp : piece2) {
+                if (cube[tmp] == 5) {
+                    output2 = 5;
+                }
+            }
+
+            auto convert = convertBase5ToBin(output0, output1, output2);
             val = val << 8;
             val |= convert;
         }
@@ -121,15 +274,15 @@ void RubiksCube::turn(int face, int rotations) {
         } break;
 
         case 1: {
-            turnBlue(rotations);
-        } break;
-
-        case 2: {
             turnRed(rotations);
         } break;
 
+        case 2: {
+            turnBlue(rotations);
+        } break;
+
         case 3: {
-            turnYellow(rotations);
+            turnGreen(rotations);
         } break;
 
         case 4: {
@@ -137,7 +290,7 @@ void RubiksCube::turn(int face, int rotations) {
         } break;
 
         case 5: {
-            turnGreen(rotations);
+            turnYellow(rotations);
         } break;
     }
 }
@@ -226,40 +379,8 @@ void RubiksCube::turnYellow(int rotations) {
     }
 }
 
-void RubiksCube::turnWhite1()  {
+void RubiksCube::turnWhite3()  {
     unsigned char tmp;
-
-//    tmp = cube[53];
-//    cube[53] = cube[42];
-//    cube[42] = cube[18];
-//    cube[18] = cube[11];
-//    cube[11] = tmp;
-//
-//    tmp = cube[52];
-//    cube[52] = cube[39];
-//    cube[39] = cube[19];
-//    cube[19] = cube[14];
-//    cube[14] = tmp;
-//
-//    tmp = cube[51];
-//    cube[51] = cube[36];
-//    cube[36] = cube[20];
-//    cube[20] = cube[17];
-//    cube[17] = tmp;
-//
-//    tmp = cube[8];
-//    cube[8] = cube[6];
-//    cube[6] = cube[0];
-//    cube[0] = cube[2];
-//    cube[2] = tmp;
-//
-//    tmp = cube[5];
-//    cube[5] = cube[7];
-//    cube[7] = cube[3];
-//    cube[3] = cube[1];
-//    cube[1] = tmp;
-
-// ----------------------- //
     tmp = cube[47];
     cube[47] = cube[37];
     cube[37] = cube[16];
@@ -294,46 +415,6 @@ void RubiksCube::turnWhite1()  {
 
 void RubiksCube::turnWhite2()  {
     unsigned char tmp;
-
-//    tmp = cube[53];
-//    cube[53] = cube[18];
-//    cube[18] = tmp;
-//
-//    tmp = cube[52];
-//    cube[52] = cube[19];
-//    cube[19] = tmp;
-//
-//    tmp = cube[51];
-//    cube[51] = cube[20];
-//    cube[20] = tmp;
-//
-//    tmp = cube[42];
-//    cube[42] = cube[11];
-//    cube[11] = tmp;
-//
-//    tmp = cube[39];
-//    cube[39] = cube[14];
-//    cube[14] = tmp;
-//
-//    tmp = cube[36];
-//    cube[36] = cube[17];
-//    cube[17] = tmp;
-//
-//    tmp = cube[8];
-//    cube[8] = cube[0];
-//    cube[0] = tmp;
-//
-//    tmp = cube[5];
-//    cube[5] = cube[3];
-//    cube[3] = tmp;
-//
-//    tmp = cube[2];
-//    cube[2] = cube[6];
-//    cube[6] = tmp;
-//
-//    tmp = cube[7];
-//    cube[7] = cube[1];
-//    cube[1] = tmp;
 
     tmp = cube[47];
     cube[47] = cube[16];
@@ -376,38 +457,8 @@ void RubiksCube::turnWhite2()  {
     cube[1] = tmp;
 }
 
-void RubiksCube::turnWhite3()  {
+void RubiksCube::turnWhite1()  {
     unsigned char tmp;
-
-//    tmp = cube[53];
-//    cube[53] = cube[11];
-//    cube[11] = cube[18];
-//    cube[18] = cube[42];
-//    cube[42] = tmp;
-//
-//    tmp = cube[52];
-//    cube[52] = cube[14];
-//    cube[14] = cube[19];
-//    cube[19] = cube[39];
-//    cube[39] = tmp;
-//
-//    tmp = cube[51];
-//    cube[51] = cube[17];
-//    cube[17] = cube[20];
-//    cube[20] = cube[36];
-//    cube[36] = tmp;
-//
-//    tmp = cube[8];
-//    cube[8] = cube[2];
-//    cube[2] = cube[0];
-//    cube[0] = cube[6];
-//    cube[6] = tmp;
-//
-//    tmp = cube[5];
-//    cube[5] = cube[1];
-//    cube[1] = cube[3];
-//    cube[3] = cube[7];
-//    cube[7] = tmp;
 
     tmp = cube[47];
     cube[47] = cube[10];
@@ -440,56 +491,26 @@ void RubiksCube::turnWhite3()  {
     cube[6] = tmp;
 }
 
-void RubiksCube::turnBlue1()  {
+void RubiksCube::turnRed3()  {
     unsigned char tmp;
-
-//    tmp = cube[51];
-//    cube[51] = cube[6];
-//    cube[6] = cube[24];
-//    cube[24] = cube[29];
-//    cube[29] = tmp;
-//
-//    tmp = cube[48];
-//    cube[48] = cube[3];
-//    cube[3] = cube[21];
-//    cube[21] = cube[32];
-//    cube[32] = tmp;
-//
-//    tmp = cube[45];
-//    cube[45] = cube[0];
-//    cube[0] = cube[18];
-//    cube[18] = cube[35];
-//    cube[35] = tmp;
-//
-//    tmp = cube[17];
-//    cube[17] = cube[15];
-//    cube[15] = cube[9];
-//    cube[9] = cube[11];
-//    cube[11] = tmp;
-//
-//    tmp = cube[14];
-//    cube[14] = cube[16];
-//    cube[16] = cube[12];
-//    cube[12] = cube[10];
-//    cube[10] = tmp;
 
     tmp = cube[45];
     cube[45] = cube[5];
     cube[5] = cube[21];
-    cube[21] = cube[26];
-    cube[26] = tmp;
+    cube[21] = cube[29];
+    cube[29] = tmp;
 
     tmp = cube[43];
     cube[43] = cube[3];
     cube[3] = cube[19];
-    cube[19] = cube[28];
-    cube[28] = tmp;
+    cube[19] = cube[27];
+    cube[27] = tmp;
 
     tmp = cube[40];
     cube[40] = cube[0];
     cube[0] = cube[16];
-    cube[16] = cube[31];
-    cube[31] = tmp;
+    cube[16] = cube[24];
+    cube[24] = tmp;
 
     tmp = cube[15];
     cube[15] = cube[13];
@@ -505,48 +526,8 @@ void RubiksCube::turnBlue1()  {
 
 }
 
-void RubiksCube::turnBlue2()  {
+void RubiksCube::turnRed2()  {
     unsigned char tmp;
-
-//    tmp = cube[51];
-//    cube[51] = cube[24];
-//    cube[24] = tmp;
-//
-//    tmp = cube[48];
-//    cube[48] = cube[21];
-//    cube[21] = tmp;
-//
-//    tmp = cube[45];
-//    cube[45] = cube[18];
-//    cube[18] = tmp;
-//
-//    tmp = cube[35];
-//    cube[35] = cube[0];
-//    cube[0] = tmp;
-//
-//    tmp = cube[32];
-//    cube[32] = cube[3];
-//    cube[3] = tmp;
-//
-//    tmp = cube[29];
-//    cube[29] = cube[6];
-//    cube[6] = tmp;
-//
-//    tmp = cube[17];
-//    cube[17] = cube[9];
-//    cube[9] = tmp;
-//
-//    tmp = cube[14];
-//    cube[14] = cube[12];
-//    cube[12] = tmp;
-//
-//    tmp = cube[11];
-//    cube[11] = cube[15];
-//    cube[15] = tmp;
-//
-//    tmp = cube[16];
-//    cube[16] = cube[10];
-//    cube[10] = tmp;
 
     tmp = cube[45];
     cube[45] = cube[21];
@@ -560,16 +541,16 @@ void RubiksCube::turnBlue2()  {
     cube[40] = cube[16];
     cube[16] = tmp;
 
-    tmp = cube[31];
-    cube[31] = cube[0];
+    tmp = cube[24];
+    cube[24] = cube[0];
     cube[0] = tmp;
 
-    tmp = cube[28];
-    cube[28] = cube[3];
+    tmp = cube[27];
+    cube[27] = cube[3];
     cube[3] = tmp;
 
-    tmp = cube[26];
-    cube[26] = cube[5];
+    tmp = cube[29];
+    cube[29] = cube[5];
     cube[5] = tmp;
 
     tmp = cube[15];
@@ -590,54 +571,24 @@ void RubiksCube::turnBlue2()  {
 
 }
 
-void RubiksCube::turnBlue3()  {
+void RubiksCube::turnRed1()  {
     unsigned char tmp;
 
-//    tmp = cube[51];
-//    cube[51] = cube[29];
-//    cube[29] = cube[24];
-//    cube[24] = cube[6];
-//    cube[6] = tmp;
-//
-//    tmp = cube[48];
-//    cube[48] = cube[32];
-//    cube[32] = cube[21];
-//    cube[21] = cube[3];
-//    cube[3] = tmp;
-//
-//    tmp = cube[45];
-//    cube[45] = cube[35];
-//    cube[35] = cube[18];
-//    cube[18] = cube[0];
-//    cube[0] = tmp;
-//
-//    tmp = cube[17];
-//    cube[17] = cube[11];
-//    cube[11] = cube[9];
-//    cube[9] = cube[15];
-//    cube[15] = tmp;
-//
-//    tmp = cube[14];
-//    cube[14] = cube[10];
-//    cube[10] = cube[12];
-//    cube[12] = cube[16];
-//    cube[16] = tmp;
-
     tmp = cube[45];
-    cube[45] = cube[26];
-    cube[26] = cube[21];
+    cube[45] = cube[29];
+    cube[29] = cube[21];
     cube[21] = cube[5];
     cube[5] = tmp;
 
     tmp = cube[43];
-    cube[43] = cube[28];
-    cube[28] = cube[19];
+    cube[43] = cube[27];
+    cube[27] = cube[19];
     cube[19] = cube[3];
     cube[3] = tmp;
 
     tmp = cube[40];
-    cube[40] = cube[31];
-    cube[31] = cube[16];
+    cube[40] = cube[24];
+    cube[24] = cube[16];
     cube[16] = cube[0];
     cube[0] = tmp;
 
@@ -655,54 +606,24 @@ void RubiksCube::turnBlue3()  {
 
 }
 
-void RubiksCube::turnRed1()  {
+void RubiksCube::turnBlue3()  {
     unsigned char tmp;
 
-//    tmp = cube[44];
-//    cube[44] = cube[35];
-//    cube[35] = cube[17];
-//    cube[17] = cube[8];
-//    cube[8] = tmp;
-//
-//    tmp = cube[43];
-//    cube[43] = cube[34];
-//    cube[34] = cube[16];
-//    cube[16] = cube[7];
-//    cube[7] = tmp;
-//
-//    tmp = cube[42];
-//    cube[42] = cube[33];
-//    cube[33] = cube[15];
-//    cube[15] = cube[6];
-//    cube[6] = tmp;
-//
-//    tmp = cube[26];
-//    cube[26] = cube[24];
-//    cube[24] = cube[18];
-//    cube[18] = cube[20];
-//    cube[20] = tmp;
-//
-//    tmp = cube[23];
-//    cube[23] = cube[25];
-//    cube[25] = cube[21];
-//    cube[21] = cube[19];
-//    cube[19] = tmp;
-
     tmp = cube[39];
-    cube[39] = cube[31];
-    cube[31] = cube[15];
+    cube[39] = cube[24];
+    cube[24] = cube[15];
     cube[15] = cube[7];
     cube[7] = tmp;
 
     tmp = cube[38];
-    cube[38] = cube[30];
-    cube[30] = cube[14];
+    cube[38] = cube[25];
+    cube[25] = cube[14];
     cube[14] = cube[6];
     cube[6] = tmp;
 
     tmp = cube[37];
-    cube[37] = cube[29];
-    cube[29] = cube[13];
+    cube[37] = cube[26];
+    cube[26] = cube[13];
     cube[13] = cube[5];
     cube[5] = tmp;
 
@@ -720,48 +641,8 @@ void RubiksCube::turnRed1()  {
 
 }
 
-void RubiksCube::turnRed2()  {
+void RubiksCube::turnBlue2()  {
     unsigned char tmp;
-
-//    tmp = cube[44];
-//    cube[44] = cube[17];
-//    cube[17] = tmp;
-//
-//    tmp = cube[43];
-//    cube[43] = cube[16];
-//    cube[16] = tmp;
-//
-//    tmp = cube[42];
-//    cube[42] = cube[15];
-//    cube[15] = tmp;
-//
-//    tmp = cube[35];
-//    cube[35] = cube[8];
-//    cube[8] = tmp;
-//
-//    tmp = cube[34];
-//    cube[34] = cube[7];
-//    cube[7] = tmp;
-//
-//    tmp = cube[33];
-//    cube[33] = cube[6];
-//    cube[6] = tmp;
-//
-//    tmp = cube[26];
-//    cube[26] = cube[18];
-//    cube[18] = tmp;
-//
-//    tmp = cube[23];
-//    cube[23] = cube[21];
-//    cube[21] = tmp;
-//
-//    tmp = cube[20];
-//    cube[20] = cube[24];
-//    cube[24] = tmp;
-//
-//    tmp = cube[25];
-//    cube[25] = cube[19];
-//    cube[19] = tmp;
 
     tmp = cube[39];
     cube[39] = cube[15];
@@ -775,16 +656,16 @@ void RubiksCube::turnRed2()  {
     cube[37] = cube[13];
     cube[13] = tmp;
 
-    tmp = cube[31];
-    cube[31] = cube[7];
+    tmp = cube[24];
+    cube[24] = cube[7];
     cube[7] = tmp;
 
-    tmp = cube[30];
-    cube[30] = cube[6];
+    tmp = cube[25];
+    cube[25] = cube[6];
     cube[6] = tmp;
 
-    tmp = cube[29];
-    cube[29] = cube[5];
+    tmp = cube[26];
+    cube[26] = cube[5];
     cube[5] = tmp;
 
     tmp = cube[23];
@@ -805,56 +686,26 @@ void RubiksCube::turnRed2()  {
 
 }
 
-void RubiksCube::turnRed3()  {
+void RubiksCube::turnBlue1()  {
     unsigned char tmp;
-
-//    tmp = cube[44];
-//    cube[44] = cube[8];
-//    cube[8] = cube[17];
-//    cube[17] = cube[35];
-//    cube[35] = tmp;
-//
-//    tmp = cube[43];
-//    cube[43] = cube[7];
-//    cube[7] = cube[16];
-//    cube[16] = cube[34];
-//    cube[34] = tmp;
-//
-//    tmp = cube[42];
-//    cube[42] = cube[6];
-//    cube[6] = cube[15];
-//    cube[15] = cube[33];
-//    cube[33] = tmp;
-//
-//    tmp = cube[26];
-//    cube[26] = cube[20];
-//    cube[20] = cube[18];
-//    cube[18] = cube[24];
-//    cube[24] = tmp;
-//
-//    tmp = cube[23];
-//    cube[23] = cube[19];
-//    cube[19] = cube[21];
-//    cube[21] = cube[25];
-//    cube[25] = tmp;
 
     tmp = cube[39];
     cube[39] = cube[7];
     cube[7] = cube[15];
-    cube[15] = cube[31];
-    cube[31] = tmp;
+    cube[15] = cube[24];
+    cube[24] = tmp;
 
     tmp = cube[38];
     cube[38] = cube[6];
     cube[6] = cube[14];
-    cube[14] = cube[30];
-    cube[30] = tmp;
+    cube[14] = cube[25];
+    cube[25] = tmp;
 
     tmp = cube[37];
     cube[37] = cube[5];
     cube[5] = cube[13];
-    cube[13] = cube[29];
-    cube[29] = tmp;
+    cube[13] = cube[26];
+    cube[26] = tmp;
 
     tmp = cube[23];
     cube[23] = cube[18];
@@ -870,38 +721,8 @@ void RubiksCube::turnRed3()  {
 
 }
 
-void RubiksCube::turnGreen1()  {
+void RubiksCube::turnYellow3()  {
     unsigned char tmp;
-
-//    tmp = cube[47];
-//    cube[47] = cube[9];
-//    cube[9] = cube[24];
-//    cube[24] = cube[44];
-//    cube[44] = tmp;
-//
-//    tmp = cube[46];
-//    cube[46] = cube[12];
-//    cube[12] = cube[25];
-//    cube[25] = cube[41];
-//    cube[41] = tmp;
-//
-//    tmp = cube[45];
-//    cube[45] = cube[15];
-//    cube[15] = cube[26];
-//    cube[26] = cube[38];
-//    cube[38] = tmp;
-//
-//    tmp = cube[35];
-//    cube[35] = cube[33];
-//    cube[33] = cube[27];
-//    cube[27] = cube[29];
-//    cube[29] = tmp;
-//
-//    tmp = cube[32];
-//    cube[32] = cube[34];
-//    cube[34] = cube[30];
-//    cube[30] = cube[28];
-//    cube[28] = tmp;
 
     tmp = cube[42];
     cube[42] = cube[8];
@@ -935,48 +756,8 @@ void RubiksCube::turnGreen1()  {
 
 }
 
-void RubiksCube::turnGreen2()  {
+void RubiksCube::turnYellow2()  {
     unsigned char tmp;
-
-//    tmp = cube[47];
-//    cube[47] = cube[24];
-//    cube[24] = tmp;
-//
-//    tmp = cube[46];
-//    cube[46] = cube[25];
-//    cube[25] = tmp;
-//
-//    tmp = cube[45];
-//    cube[45] = cube[26];
-//    cube[26] = tmp;
-//
-//    tmp = cube[44];
-//    cube[44] = cube[9];
-//    cube[9] = tmp;
-//
-//    tmp = cube[41];
-//    cube[41] = cube[12];
-//    cube[12] = tmp;
-//
-//    tmp = cube[38];
-//    cube[38] = cube[15];
-//    cube[15] = tmp;
-//
-//    tmp = cube[35];
-//    cube[35] = cube[27];
-//    cube[27] = tmp;
-//
-//    tmp = cube[32];
-//    cube[32] = cube[30];
-//    cube[30] = tmp;
-//
-//    tmp = cube[29];
-//    cube[29] = cube[33];
-//    cube[33] = tmp;
-//
-//    tmp = cube[34];
-//    cube[34] = cube[28];
-//    cube[28] = tmp;
 
     tmp = cube[42];
     cube[42] = cube[21];
@@ -1020,38 +801,8 @@ void RubiksCube::turnGreen2()  {
 
 }
 
-void RubiksCube::turnGreen3()  {
+void RubiksCube::turnYellow1()  {
     unsigned char tmp;
-
-//    tmp = cube[47];
-//    cube[47] = cube[44];
-//    cube[44] = cube[24];
-//    cube[24] = cube[9];
-//    cube[9] = tmp;
-//
-//    tmp = cube[46];
-//    cube[46] = cube[41];
-//    cube[41] = cube[25];
-//    cube[25] = cube[12];
-//    cube[12] = tmp;
-//
-//    tmp = cube[45];
-//    cube[45] = cube[38];
-//    cube[38] = cube[26];
-//    cube[26] = cube[15];
-//    cube[15] = tmp;
-//
-//    tmp = cube[35];
-//    cube[35] = cube[29];
-//    cube[29] = cube[27];
-//    cube[27] = cube[33];
-//    cube[33] = tmp;
-//
-//    tmp = cube[32];
-//    cube[32] = cube[28];
-//    cube[28] = cube[30];
-//    cube[30] = cube[34];
-//    cube[34] = tmp;
 
     tmp = cube[42];
     cube[42] = cube[39];
@@ -1085,54 +836,24 @@ void RubiksCube::turnGreen3()  {
 
 }
 
-void RubiksCube::turnOrange1()  {
+void RubiksCube::turnOrange3()  {
     unsigned char tmp;
 
-//    tmp = cube[53];
-//    cube[53] = cube[27];
-//    cube[27] = cube[26];
-//    cube[26] = cube[8];
-//    cube[8] = tmp;
-//
-//    tmp = cube[50];
-//    cube[50] = cube[30];
-//    cube[30] = cube[23];
-//    cube[23] = cube[5];
-//    cube[5] = tmp;
-//
-//    tmp = cube[47];
-//    cube[47] = cube[33];
-//    cube[33] = cube[20];
-//    cube[20] = cube[2];
-//    cube[2] = tmp;
-//
-//    tmp = cube[44];
-//    cube[44] = cube[42];
-//    cube[42] = cube[36];
-//    cube[36] = cube[38];
-//    cube[38] = tmp;
-//
-//    tmp = cube[41];
-//    cube[41] = cube[43];
-//    cube[43] = cube[39];
-//    cube[39] = cube[37];
-//    cube[37] = tmp;
-
     tmp = cube[47];
-    cube[47] = cube[24];
-    cube[24] = cube[23];
+    cube[47] = cube[31];
+    cube[31] = cube[23];
     cube[23] = cube[7];
     cube[7] = tmp;
 
     tmp = cube[44];
-    cube[44] = cube[27];
-    cube[27] = cube[20];
+    cube[44] = cube[28];
+    cube[28] = cube[20];
     cube[20] = cube[4];
     cube[4] = tmp;
 
     tmp = cube[42];
-    cube[42] = cube[29];
-    cube[29] = cube[18];
+    cube[42] = cube[26];
+    cube[26] = cube[18];
     cube[18] = cube[2];
     cube[2] = tmp;
 
@@ -1152,46 +873,6 @@ void RubiksCube::turnOrange1()  {
 
 void RubiksCube::turnOrange2()  {
     unsigned char tmp;
-
-//    tmp = cube[53];
-//    cube[53] = cube[26];
-//    cube[26] = tmp;
-//
-//    tmp = cube[50];
-//    cube[50] = cube[23];
-//    cube[23] = tmp;
-//
-//    tmp = cube[47];
-//    cube[47] = cube[20];
-//    cube[20] = tmp;
-//
-//    tmp = cube[44];
-//    cube[44] = cube[36];
-//    cube[36] = tmp;
-//
-//    tmp = cube[41];
-//    cube[41] = cube[39];
-//    cube[39] = tmp;
-//
-//    tmp = cube[38];
-//    cube[38] = cube[42];
-//    cube[42] = tmp;
-//
-//    tmp = cube[43];
-//    cube[43] = cube[37];
-//    cube[37] = tmp;
-//
-//    tmp = cube[33];
-//    cube[33] = cube[2];
-//    cube[2] = tmp;
-//
-//    tmp = cube[30];
-//    cube[30] = cube[5];
-//    cube[5] = tmp;
-//
-//    tmp = cube[27];
-//    cube[27] = cube[8];
-//    cube[8] = tmp;
 
     tmp = cube[47];
     cube[47] = cube[23];
@@ -1221,70 +902,40 @@ void RubiksCube::turnOrange2()  {
     cube[38] = cube[33];
     cube[33] = tmp;
 
-    tmp = cube[29];
-    cube[29] = cube[2];
+    tmp = cube[26];
+    cube[26] = cube[2];
     cube[2] = tmp;
 
-    tmp = cube[27];
-    cube[27] = cube[4];
+    tmp = cube[28];
+    cube[28] = cube[4];
     cube[4] = tmp;
 
-    tmp = cube[24];
+    tmp = cube[31];
     cube[24] = cube[7];
-    cube[7] = tmp;
+    cube[31] = tmp;
 
 }
 
-void RubiksCube::turnOrange3()  {
+void RubiksCube::turnOrange1()  {
     unsigned char tmp;
-
-//    tmp = cube[53];
-//    cube[53] = cube[8];
-//    cube[8] = cube[26];
-//    cube[26] = cube[27];
-//    cube[27] = tmp;
-//
-//    tmp = cube[50];
-//    cube[50] = cube[5];
-//    cube[5] = cube[23];
-//    cube[23] = cube[30];
-//    cube[30] = tmp;
-//
-//    tmp = cube[47];
-//    cube[47] = cube[2];
-//    cube[2] = cube[20];
-//    cube[20] = cube[33];
-//    cube[33] = tmp;
-//
-//    tmp = cube[44];
-//    cube[44] = cube[38];
-//    cube[38] = cube[36];
-//    cube[36] = cube[42];
-//    cube[42] = tmp;
-//
-//    tmp = cube[41];
-//    cube[41] = cube[37];
-//    cube[37] = cube[39];
-//    cube[39] = cube[43];
-//    cube[43] = tmp;
 
     tmp = cube[47];
     cube[47] = cube[7];
     cube[7] = cube[23];
-    cube[23] = cube[24];
-    cube[24] = tmp;
+    cube[23] = cube[31];
+    cube[31] = tmp;
 
     tmp = cube[44];
     cube[44] = cube[4];
     cube[4] = cube[20];
-    cube[20] = cube[27];
-    cube[27] = tmp;
+    cube[20] = cube[28];
+    cube[28] = tmp;
 
     tmp = cube[42];
     cube[42] = cube[2];
     cube[2] = cube[18];
-    cube[18] = cube[29];
-    cube[29] = tmp;
+    cube[18] = cube[26];
+    cube[26] = tmp;
 
     tmp = cube[39];
     cube[39] = cube[34];
@@ -1300,38 +951,8 @@ void RubiksCube::turnOrange3()  {
 
 }
 
-void RubiksCube::turnYellow1()  {
+void RubiksCube::turnGreen3()  {
     unsigned char tmp;
-
-//    tmp = cube[53];
-//    cube[53] = cube[51];
-//    cube[51] = cube[45];
-//    cube[45] = cube[47];
-//    cube[47] = tmp;
-//
-//    tmp = cube[50];
-//    cube[50] = cube[52];
-//    cube[52] = cube[48];
-//    cube[48] = cube[46];
-//    cube[46] = tmp;
-//
-//    tmp = cube[38];
-//    cube[38] = cube[2];
-//    cube[2] = cube[11];
-//    cube[11] = cube[29];
-//    cube[29] = tmp;
-//
-//    tmp = cube[37];
-//    cube[37] = cube[1];
-//    cube[1] = cube[10];
-//    cube[10] = cube[28];
-//    cube[28] = tmp;
-//
-//    tmp = cube[36];
-//    cube[36] = cube[0];
-//    cube[0] = cube[9];
-//    cube[9] = cube[27];
-//    cube[27] = tmp;
 
     tmp = cube[47];
     cube[47] = cube[45];
@@ -1348,65 +969,25 @@ void RubiksCube::turnYellow1()  {
     tmp = cube[34];
     cube[34] = cube[2];
     cube[2] = cube[10];
-    cube[10] = cube[26];
-    cube[26] = tmp;
+    cube[10] = cube[29];
+    cube[29] = tmp;
 
     tmp = cube[33];
     cube[33] = cube[1];
     cube[1] = cube[9];
-    cube[9] = cube[25];
-    cube[25] = tmp;
+    cube[9] = cube[30];
+    cube[30] = tmp;
 
     tmp = cube[32];
     cube[32] = cube[0];
     cube[0] = cube[8];
-    cube[8] = cube[24];
-    cube[24] = tmp;
+    cube[8] = cube[31];
+    cube[31] = tmp;
 
 }
 
-void RubiksCube::turnYellow2()  {
+void RubiksCube::turnGreen2()  {
     unsigned char tmp;
-
-//    tmp = cube[53];
-//    cube[53] = cube[45];
-//    cube[45] = tmp;
-//
-//    tmp = cube[50];
-//    cube[50] = cube[48];
-//    cube[48] = tmp;
-//
-//    tmp = cube[47];
-//    cube[47] = cube[51];
-//    cube[51] = tmp;
-//
-//    tmp = cube[52];
-//    cube[52] = cube[46];
-//    cube[46] = tmp;
-//
-//    tmp = cube[38];
-//    cube[38] = cube[11];
-//    cube[11] = tmp;
-//
-//    tmp = cube[37];
-//    cube[37] = cube[10];
-//    cube[10] = tmp;
-//
-//    tmp = cube[36];
-//    cube[36] = cube[9];
-//    cube[9] = tmp;
-//
-//    tmp = cube[29];
-//    cube[29] = cube[2];
-//    cube[2] = tmp;
-//
-//    tmp = cube[28];
-//    cube[28] = cube[1];
-//    cube[1] = tmp;
-//
-//    tmp = cube[27];
-//    cube[27] = cube[0];
-//    cube[0] = tmp;
 
     tmp = cube[47];
     cube[47] = cube[40];
@@ -1436,52 +1017,22 @@ void RubiksCube::turnYellow2()  {
     cube[32] = cube[8];
     cube[8] = tmp;
 
-    tmp = cube[26];
-    cube[26] = cube[2];
+    tmp = cube[29];
+    cube[29] = cube[2];
     cube[2] = tmp;
 
-    tmp = cube[25];
-    cube[25] = cube[1];
+    tmp = cube[30];
+    cube[30] = cube[1];
     cube[1] = tmp;
 
-    tmp = cube[24];
-    cube[24] = cube[0];
+    tmp = cube[31];
+    cube[31] = cube[0];
     cube[0] = tmp;
 
 }
 
-void RubiksCube::turnYellow3()  {
+void RubiksCube::turnGreen1()  {
     unsigned char tmp;
-
-//    tmp = cube[53];
-//    cube[53] = cube[47];
-//    cube[47] = cube[45];
-//    cube[45] = cube[51];
-//    cube[51] = tmp;
-//
-//    tmp = cube[50];
-//    cube[50] = cube[46];
-//    cube[46] = cube[48];
-//    cube[48] = cube[52];
-//    cube[52] = tmp;
-//
-//    tmp = cube[38];
-//    cube[38] = cube[29];
-//    cube[29] = cube[11];
-//    cube[11] = cube[2];
-//    cube[2] = tmp;
-//
-//    tmp = cube[37];
-//    cube[37] = cube[28];
-//    cube[28] = cube[10];
-//    cube[10] = cube[1];
-//    cube[1] = tmp;
-//
-//    tmp = cube[36];
-//    cube[36] = cube[27];
-//    cube[27] = cube[9];
-//    cube[9] = cube[0];
-//    cube[0] = tmp;
 
     tmp = cube[47];
     cube[47] = cube[42];
@@ -1496,20 +1047,20 @@ void RubiksCube::turnYellow3()  {
     cube[46] = tmp;
 
     tmp = cube[34];
-    cube[34] = cube[26];
-    cube[26] = cube[10];
+    cube[34] = cube[29];
+    cube[29] = cube[10];
     cube[10] = cube[2];
     cube[2] = tmp;
 
     tmp = cube[33];
-    cube[33] = cube[25];
-    cube[25] = cube[9];
+    cube[33] = cube[30];
+    cube[30] = cube[9];
     cube[9] = cube[1];
     cube[1] = tmp;
 
     tmp = cube[32];
-    cube[32] = cube[24];
-    cube[24] = cube[8];
+    cube[32] = cube[31];
+    cube[31] = cube[8];
     cube[8] = cube[0];
     cube[0] = tmp;
 
