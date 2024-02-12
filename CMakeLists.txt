@@ -6,11 +6,13 @@ set(CMAKE_CXX_STANDARD 20)
 set(SOURCES
         src/main.cpp
         src/RubiksCube.cpp
+        src/Lookup.cpp
 )
 
 # Specify the header files
 set(HEADERS
         include/RubiksCube.hpp
+        include/Lookup.hpp
 )
 
 # Create the executable
