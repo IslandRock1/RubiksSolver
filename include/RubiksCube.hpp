@@ -26,13 +26,16 @@ public:
     void print();
     static std::array<int, 3> oppositeFace;
     static std::array<int, 6> oppositeFaceAll;
-
+    static std::array<std::vector<int>, 48> physicalPieces;
 
     bool solvedWhiteCross();
     int numCornerSolved();
     void shuffle(int numMoves);
 
-    std::array<unsigned int, 4> hash();
+    std::array<unsigned int, 4> hashFirstTwoLayers();
+    std::array<unsigned int, 4> hashCrossAnd2Corners();
+
+
     static long convertBase5ToBin(int a, int b, int c);
 
 private:
