@@ -68,7 +68,7 @@ long RubiksCube::convertBase5ToBin(int a, int b, int c) {
     return a * 36 + b * 6 + c;
 }
 
-std::array<unsigned int, 4> RubiksCube::hashCrossAnd2Corners() {
+std::array<unsigned int, 4> RubiksCube::hashCrossAnd3Corners() {
     std::array<unsigned int, 4> vals = {0, 0, 0, 0};
 
     for (int i = 0; i < 4; i++) {
@@ -89,20 +89,20 @@ std::array<unsigned int, 4> RubiksCube::hashCrossAnd2Corners() {
 
             for (int newIx = 0; newIx < 3; newIx++) {
                 auto piece0 = physicalPieces[indices[newIx]];
+                auto currentFace = faces[newIx];
                 output[newIx] = faces[newIx];
 
                 if (piece0.size() > 1) {
                     if ((cube[piece0[0]] == 5) || (cube[piece0[1]] == 5)) {
                         output[newIx] = 5;
-                    } else if (face0 == 5) {
+                    } else if (currentFace == 5) {
                         output[newIx] = 5;
                     } else {
-                        auto white = (face0 == 0) + (cube[piece0[0]] == 0) + (cube[piece0[1]] == 0);
-                        auto orange = (face0 == 4) + (cube[piece0[0]] == 4) + (cube[piece0[1]] == 4);
-                        auto blue = (face0 == 2) + (cube[piece0[0]] == 2) + (cube[piece0[1]] == 2);
-                        auto green = (face0 == 3) + (cube[piece0[0]] == 3) + (cube[piece0[0]] == 3);
+                        auto white = (currentFace == 0) + (cube[piece0[0]] == 0) + (cube[piece0[1]] == 0);
+                        auto orange = (currentFace == 4) + (cube[piece0[0]] == 4) + (cube[piece0[1]] == 4);
+                        auto green = (currentFace == 3) + (cube[piece0[0]] == 3) + (cube[piece0[1]] == 3);
 
-                        if ((white + orange + blue + green) == 3) {
+                        if ((white + orange + green) == 3) {
                             output[newIx] = 5;
                         }
                     }
@@ -110,14 +110,13 @@ std::array<unsigned int, 4> RubiksCube::hashCrossAnd2Corners() {
                 } else {
                     if (cube[piece0[0]] == 5) {
                         output[newIx] = 5;
-                    } else if (face0 == 5) {
+                    } else if (currentFace == 5) {
                         output[newIx] = 5;
                     } else {
-                        auto orange = (face0 == 4) + (cube[piece0[0]] == 4);
-                        auto blue = (face0 == 2) + (cube[piece0[0]] == 2);
-                        auto green = (face0 == 3) + (cube[piece0[0]] == 3);
+                        auto orange = (currentFace == 4) + (cube[piece0[0]] == 4);
+                        auto green = (currentFace == 3) + (cube[piece0[0]] == 3);
 
-                        if ((orange + blue + green) == 2) {
+                        if ((orange + green) == 2) {
                             output[newIx] = 5;
                         }
                     }
@@ -261,10 +260,18 @@ void RubiksCube::shuffle(int numMoves) {
     std::mt19937 rng(dev());
     std::uniform_int_distribution<std::mt19937::result_type> dist6(0,5); // distribution in range [1, 6]
 
+    std::cout << "Starting shuffle.." << "\n";
+
     for (int i = 0; i < numMoves; i++)
     {
-        turn(dist6(rng), 1);
+        auto face = dist6(rng);
+        std::cout << "f" << face << "n" << 1 << " | ";
+
+        turn(face, 1);
     }
+
+    std::cout << "\n";
+    print();
 }
 
 void RubiksCube::turn(int face, int rotations) {
@@ -911,8 +918,8 @@ void RubiksCube::turnOrange2()  {
     cube[4] = tmp;
 
     tmp = cube[31];
-    cube[24] = cube[7];
-    cube[31] = tmp;
+    cube[31] = cube[7];
+    cube[7] = tmp;
 
 }
 

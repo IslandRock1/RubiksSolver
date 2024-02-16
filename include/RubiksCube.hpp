@@ -33,7 +33,7 @@ public:
     void shuffle(int numMoves);
 
     std::array<unsigned int, 4> hashFirstTwoLayers();
-    std::array<unsigned int, 4> hashCrossAnd2Corners();
+    std::array<unsigned int, 4> hashCrossAnd3Corners();
 
 
     static long convertBase5ToBin(int a, int b, int c);
