@@ -31,7 +31,7 @@ void generateLookup(
 {
     if (depth == 0) { return;}
 
-    auto vals = cube.hashFirstTwoLayers();
+    auto vals = cube.hashCrossAnd3Corners();
     if (map.find(vals) != map.end()) {
         if (moves.size() < map[vals].size()) {
             map[vals] = moves;
@@ -66,7 +66,6 @@ Lookup::Lookup(int depth) {
     RubiksCube cube;
     std::vector<Move> moves;
 
-    // Dinna vil generere for en løst cube dumbass...
     generateLookup(firstTwoLayers, moves, cube, depth + 1);
 
     std::cout << "Size of lookup table: " << firstTwoLayers.size() << "\n";
