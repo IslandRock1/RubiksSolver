@@ -6,24 +6,8 @@
 #include "Lookup.hpp"
 
 long long int globalStates = 0;
-int maxLevel = 0;
+int fewestMoves = 10;
 std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 1000000000>>> globalStartTime;
-
-//bool prune(Move &currentMove, Move &prevMove, Move &doublePrevMove) {
-//    if (currentMove.face == prevMove.face) { return true;}
-//
-//    if ((currentMove.face == doublePrevMove.face) && (RubiksCube::oppositeFace[currentMove.face] == prevMove.face)) {
-//        return true;
-//    }
-//
-//    if (currentMove.face < 3) {
-//        if (prevMove.face == RubiksCube::oppositeFace[currentMove.face]) {
-//            return true;
-//        }
-//    }
-//
-//    return false;
-//}
 
 void execEveryMove(
         RubiksCube &cube,
@@ -32,27 +16,29 @@ void execEveryMove(
         Lookup &lookup)
 {
 
-    auto lookupSolution = lookup.firstTwoLayers.find(cube.hashFirstTwoLayers());
+    auto lookupSolution = lookup.firstTwoLayers.find(cube.hashCrossAnd3Corners());
 
     if (lookupSolution != lookup.firstTwoLayers.end()) {
         auto end = std::chrono::high_resolution_clock::now();
         auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - globalStartTime).count() / 1000;
-        std::cout << "Found solution for first two layers in " << dur << " milliseconds and " <<
-            moves.size() + lookup.firstTwoLayers[cube.hashFirstTwoLayers()].size() << " moves." << "\n";
-    }
 
-//    int level = cube.solvedWhiteCross();
-//
-//    if (level) {
-//        level += cube.numCornerSolved();
-//
-//        if (level > maxLevel) {
-//            auto end = std::chrono::high_resolution_clock::now();
-//            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - globalStartTime);
-//            std::cout << "Reached level: " << level << " after " << duration.count() / 1000 << " milliseconds" << "\n";
-//            maxLevel = level;
-//        }
-//    }
+        auto numMoves = moves.size() + lookup.firstTwoLayers[cube.hashCrossAnd3Corners()].size();
+        if (numMoves < fewestMoves) {
+            fewestMoves = numMoves;
+            std::cout << "Found solution for cross and three corners in " << dur << " milliseconds and " <<
+                      numMoves << " moves. Moves.size() = " << moves.size() << " | Lookup moves.size = " << lookup.firstTwoLayers[cube.hashFirstTwoLayers()].size() << "\n";
+
+            std::cout << "Moves: ";
+            for (auto m : moves) {
+                std::cout << "f" << m.face << "n" << m.rotations << " | ";
+            }
+            std::cout << "\n" << "And: ";
+            for (auto m : lookup.firstTwoLayers[cube.hashCrossAnd3Corners()]) {
+                std::cout << "f" << m.face << "n" << m.rotations << " | ";
+            }
+
+        }
+    }
 
     if (depth == 0) {
         globalStates++;
@@ -103,41 +89,21 @@ void printHash(std::array<unsigned int, 4> &hash, bool bit = false) {
 }
 
 int main() {
-    RubiksCube c;
-    auto hash = c.hashCrossAnd2Corners();
-    printHash(hash, false);
-
-    // c.turn(4, 1);
-    c.turn(5, 2);
-    // c.turn(4, 3);
-
-    hash = c.hashCrossAnd2Corners();
-    printHash(hash, false);
-    return 69;
-
-//    auto st = std::chrono::high_resolution_clock::now();
-//    Lookup l(6);
-//    auto en = std::chrono::high_resolution_clock::now();
-//    auto du = std::chrono::duration_cast<std::chrono::microseconds>(en - st);
-//    std::cout << "Time taken by function: " << du.count() / 1000 << " milliseconds" << std::endl;
-//
-//    return 69;
-
     RubiksCube myCube;
-    myCube.shuffle(100);
+    myCube.shuffle(30);
 
     std::vector<Move> moves;
 
     auto start = std::chrono::high_resolution_clock::now();
     globalStartTime = start;
 
-    Lookup lookup(7);
+    Lookup lookup(6);
 
     auto endLookup = std::chrono::high_resolution_clock::now();
     auto durLookup = std::chrono::duration_cast<std::chrono::microseconds>(endLookup - start);
     std::cout << "Time to generate lookup: " << durLookup.count() / 1000 << " milliseconds" << std::endl;
 
-    execEveryMove(myCube, 7, moves, lookup);
+    execEveryMove(myCube, 3, moves, lookup);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
