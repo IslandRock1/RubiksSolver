@@ -7,6 +7,7 @@
 
 #include <array>
 #include <string>
+#include <map>
 
 struct Move{
     int face;
@@ -17,26 +18,80 @@ struct Move{
     }
 };
 
+namespace RubiksConst {
+    constexpr std::array<Move, 18> everyMove = {{{0, 1}, {0, 2}, {0, 3}, {1, 1}, {1, 2}, {1, 3}, {2, 1}, {2, 2}, {2, 3}, {3, 1}, {3, 2}, {3, 3}, {4, 1}, {4, 2}, {4, 3}, {5, 1}, {5, 2}, {5, 3}}};
+    constexpr std::array<int, 3> oppositeFace = {5, 4, 3};
+    constexpr std::array<int, 6> oppositeFaceAll = {5, 4, 3, 2, 1, 0};
+
+    const std::array<std::vector<int>, 48> physicalPieces = {{
+        {10, 45},        // 0
+        {46},        // 1
+        {32, 47},// 2
+        {12},        // 3
+        {35},        // 4
+        {15, 16},// 5
+        {17},        // 6
+        {18, 37},// 7
+        {29, 40},// 8
+        {43},        // 9
+        {0, 45}, // 10
+        {27},        // 11
+        {3},         // 12
+        {21, 24},// 13
+        {19},        // 14
+        {5, 16}, // 15
+        {5, 15}, // 16
+        {6},         // 17
+        {7, 37}, // 18
+        {14},        // 19
+        {38},        // 20
+        {13, 24},// 21
+        {25},        // 22
+        {26, 39},// 23
+        {13, 21},// 24
+        {22},        // 25
+        {23, 39},// 26
+        {11},        // 27
+        {36},        // 28
+        {8, 40}, // 29
+        {41},        // 30
+        {34, 42},// 31
+        {2, 47}, // 32
+        {44},        // 33
+        {31, 42},// 34
+        {4},         // 35
+        {28},        // 36
+        {7, 18}, // 37
+        {20},        // 38
+        {23, 26},// 39
+        {8, 29}, // 40
+        {30},        // 41
+        {31, 34},// 42
+        {9},         // 43
+        {33},        // 44
+        {0, 10}, // 45
+        {1},         // 46
+        {2, 32}  // 47
+    }};
+}
+
 class RubiksCube {
 public:
+
     std::array<short, 48> cube = {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3};
     void turn(int face, int rotations);
-    std::array<Move, 18> everyMove = {{{0, 1}, {0, 2}, {0, 3}, {1, 1}, {1, 2}, {1, 3}, {2, 1}, {2, 2}, {2, 3}, {3, 1}, {3, 2}, {3, 3}, {4, 1}, {4, 2}, {4, 3}, {5, 1}, {5, 2}, {5, 3}}};
 
     void print();
-    static std::array<int, 3> oppositeFace;
-    static std::array<int, 6> oppositeFaceAll;
-    static std::array<std::vector<int>, 48> physicalPieces;
 
     bool solvedWhiteCross();
     int numCornerSolved();
-    void shuffle(int numMoves);
+    std::vector<Move> shuffle(int numMoves, bool print = false);
 
     std::array<unsigned int, 4> hashFirstTwoLayers();
     std::array<unsigned int, 4> hashCrossAnd3Corners();
+    std::array<unsigned int, 4> hashCrossAnd2Corners();
 
-
-    static long convertBase5ToBin(int a, int b, int c);
+    inline static unsigned short convertBase5ToBin(int a, int b, int c);
 
 private:
     bool solvedRBCorner();
