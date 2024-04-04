@@ -3,18 +3,19 @@
 //
 
 #include <iostream>
+#include <chrono>
 
 #include "Lookup.hpp"
 
 bool Lookup::prune(Move &currentMove, Move &prevMove, Move &doublePrevMove) {
     if (currentMove.face == prevMove.face) { return true;}
 
-    if ((currentMove.face == doublePrevMove.face) && (RubiksCube::oppositeFaceAll[currentMove.face] == prevMove.face)) {
+    if ((currentMove.face == doublePrevMove.face) && (RubiksConst::oppositeFaceAll[currentMove.face] == prevMove.face)) {
         return true;
     }
 
     if (currentMove.face < 3) {
-        if (prevMove.face == RubiksCube::oppositeFace[currentMove.face]) {
+        if (prevMove.face == RubiksConst::oppositeFace[currentMove.face]) {
             return true;
         }
     }
@@ -31,7 +32,8 @@ void generateLookup(
 {
     if (depth == 0) { return;}
 
-    auto vals = cube.hashCrossAnd3Corners();
+    auto vals = cube.hashCrossAnd2Corners();
+
     if (map.find(vals) != map.end()) {
         if (moves.size() < map[vals].size()) {
             map[vals] = moves;
@@ -40,18 +42,18 @@ void generateLookup(
         map[vals] = moves;
     }
 
-    for (auto m : cube.everyMove) {
-        auto size = moves.size();
-        Move prevMove {7, 7};
-        Move doublePrevMove {7, 7};
+    auto size = moves.size();
+    Move prevMove {7, 7};
+    Move doublePrevMove {7, 7};
 
-        if (size > 1) {
-            prevMove = moves[size - 1];
-            doublePrevMove = moves[size - 2];
-        } else if (size > 0) {
-            prevMove = moves[size - 1];
-        }
+    if (size > 1) {
+        prevMove = moves[size - 1];
+        doublePrevMove = moves[size - 2];
+    } else if (size > 0) {
+        prevMove = moves[size - 1];
+    }
 
+    for (auto m : RubiksConst::everyMove) {
         if (Lookup::prune(m, prevMove, doublePrevMove)) { continue;}
 
         moves.push_back(m);
@@ -66,7 +68,10 @@ Lookup::Lookup(int depth) {
     RubiksCube cube;
     std::vector<Move> moves;
 
+    auto start = std::chrono::high_resolution_clock::now();
     generateLookup(firstTwoLayers, moves, cube, depth + 1);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto durLookup = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
-    std::cout << "Size of lookup table: " << firstTwoLayers.size() << "\n";
+    std::cout << "Size of lookup table is " << firstTwoLayers.size() << " in " << durLookup.count() / 1000 / 1000 << " seconds." << "\n";
 }
