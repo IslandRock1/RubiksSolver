@@ -88,8 +88,8 @@ public:
     std::vector<Move> shuffle(int numMoves, bool print = false);
 
     std::array<unsigned int, 4> hashFirstTwoLayers();
-    std::array<unsigned int, 4> hashCrossAnd3Corners();
     std::array<unsigned int, 4> hashCrossAnd2Corners();
+    std::array<unsigned int, 4> hashCrossAnd3Corners();
 
     inline static unsigned short convertBase5ToBin(int a, int b, int c);
 

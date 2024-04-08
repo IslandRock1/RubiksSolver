@@ -13,8 +13,13 @@
 
 class Lookup {
 public:
-    Lookup(int depth);
     std::map<std::array<unsigned int, 4>, std::vector<Move>> firstTwoLayers;
+    std::map<std::array<unsigned int, 4>, std::vector<Move>> crossAnd2Corners;
+    std::map<std::array<unsigned int, 4>, std::vector<Move>> crossAnd3Corners;
+
+    void makeFirstTwoLayers(int depth);
+    void makeCrossAnd2Corners(int depth);
+    void makeCrossAnd3Corners(int depth);
 
     static bool prune(Move &currentMove, Move &prevMove, Move &doublePrevMove);
 };
