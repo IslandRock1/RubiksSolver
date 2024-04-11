@@ -268,9 +268,12 @@ bool RubiksCube::solvedBOCorner() {
     );
 }
 
-std::vector<Move> RubiksCube::shuffle(int numMoves, bool print) {
-    std::random_device dev;
-    std::mt19937 rng(dev());
+std::vector<Move> RubiksCube::shuffle(int numMoves, bool print, unsigned int seed) {
+    // std::random_device dev;
+
+    std::mt19937 rng;
+    rng.seed(seed);
+
     std::uniform_int_distribution<std::mt19937::result_type> dist6(0,5);
     std::uniform_int_distribution<std::mt19937::result_type> distNum(1, 3);
 
@@ -299,6 +302,10 @@ std::vector<Move> RubiksCube::shuffle(int numMoves, bool print) {
 
     if (print) {std::cout << "\n";}
     return shuffleMoves;
+}
+
+void RubiksCube::turn(Move m) {
+    turn(m.face, m.rotations);
 }
 
 void RubiksCube::turn(int face, int rotations) {

@@ -7,7 +7,7 @@
 #include "RubiksCube.hpp"
 #include "Lookup.hpp"
 
-std::vector<Move> addMovesWithLookup(std::vector<Move> &moves, std::vector<Move> &lookupMoves, bool reverse = true) {
+std::vector<Move> addMovesWithLookup(const std::vector<Move> moves, std::vector<Move> lookupMoves, bool reverse = true) {
     std::vector<Move> outMoves;
 
     for (auto m : moves) {
@@ -46,14 +46,6 @@ std::vector<Move> execEveryMove(
         {
             lookupSolution = lookup.find(cube.hashCrossAnd2Corners());
             if (lookupSolution != lookup.end()) {
-
-//                auto tmp = lookup[cube.hashCrossAnd2Corners()];
-//                std::reverse(tmp.begin(), tmp.end());
-//
-//                for (auto m : tmp) {
-//                    cube.turn(m.face, 4 - m.rotations);
-//                }
-
                 return addMovesWithLookup(moves, lookup[cube.hashCrossAnd2Corners()]);
             }
         } break;
@@ -62,14 +54,6 @@ std::vector<Move> execEveryMove(
         {
             lookupSolution = lookup.find(cube.hashCrossAnd3Corners());
             if (lookupSolution != lookup.end()) {
-
-//                auto tmp = lookup[cube.hashCrossAnd3Corners()];
-//                std::reverse(tmp.begin(), tmp.end());
-//
-//                for (auto m : tmp) {
-//                    cube.turn(m.face, 4 - m.rotations);
-//                }
-
                 return addMovesWithLookup(moves, lookup[cube.hashCrossAnd3Corners()]);
             }
         } break;
@@ -78,14 +62,6 @@ std::vector<Move> execEveryMove(
         {
             lookupSolution = lookup.find(cube.hashFirstTwoLayers());
             if (lookupSolution != lookup.end()) {
-
-//                auto tmp = lookup[cube.hashFirstTwoLayers()];
-//                std::reverse(tmp.begin(), tmp.end());
-//
-//                for (auto m : tmp) {
-//                    cube.turn(m.face, 4 - m.rotations);
-//                }
-
                 return addMovesWithLookup(moves, lookup[cube.hashFirstTwoLayers()]);
             }
         }
@@ -124,6 +100,7 @@ std::vector<Move> execEveryMove(
         }
     }
 
+//    std::cout << "Returned from latest" << "\n";
     return {};
 }
 
@@ -212,12 +189,12 @@ void printMapSize(const std::map<std::array<unsigned int, 4>, std::vector<Move>>
         }
     }
 
-    // Convert total size to kilobytes
-    double totalSizeKB = static_cast<double>(totalSize) / 1024.0;
+    // Convert total size to megabytes
+    double totalSizeMB = static_cast<double>(totalSize) / 1024.0 / 1024.0;
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
-    std::cout << "Total size of map: " << std::fixed << std::setprecision(2) << totalSizeKB << " KB. Size found in " << duration.count() / 1000 << " milliseconds." << std::endl;
+    std::cout << "Total size of map: " << std::fixed << std::setprecision(2) << totalSizeMB << " MB. Size found in " << duration.count() / 1000 << " milliseconds." << std::endl;
 }
 
 std::vector<Move> solveCrossAnd2Corners(RubiksCube &cube, Lookup &lookup) {
@@ -228,13 +205,14 @@ std::vector<Move> solveCrossAnd2Corners(RubiksCube &cube, Lookup &lookup) {
         std::vector<Move> outMoves;
 
         auto hashMoves = lookup.crossAnd2Corners[cube.hashCrossAnd2Corners()];
+
         std::reverse(hashMoves.begin(), hashMoves.end());
 
         for (auto m : hashMoves) {
             outMoves.push_back({m.face, 4 - m.rotations});
         }
 
-        std::cout << "Found solution with lookup" << "\n";
+        std::reverse(hashMoves.begin(), hashMoves.end());
         return outMoves;
     }
 
@@ -263,7 +241,7 @@ std::vector<Move> solveCrossAnd3Corners(RubiksCube &cube, Lookup &lookup) {
             outMoves.push_back({m.face, 4 - m.rotations});
         }
 
-        std::cout << "Found solution with lookup" << "\n";
+        std::reverse(hashMoves.begin(), hashMoves.end());
         return outMoves;
     }
 
@@ -292,7 +270,7 @@ std::vector<Move> solveFirstTwoLayers(RubiksCube &cube, Lookup &lookup) {
             outMoves.push_back({m.face, 4 - m.rotations});
         }
 
-        std::cout << "Found solution with lookup" << "\n";
+        std::reverse(hashMoves.begin(), hashMoves.end());
         return outMoves;
     }
 
@@ -307,65 +285,172 @@ std::vector<Move> solveFirstTwoLayers(RubiksCube &cube, Lookup &lookup) {
     throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
 }
 
+void TestSolver() {
+    Lookup lookup;
+
+    lookup.makeCrossAnd2Corners(6);
+    printMapSize(lookup.crossAnd2Corners);
+
+    RubiksCube cube;
+
+    std::vector<Move> shuffleMoves = {
+            {1, 3},
+            {3, 1},
+            {2, 3},
+            {0, 3},
+            {2, 3},
+            {1, 1},
+            {0, 3},
+            {2, 1},
+            {4, 3},
+            {1, 2},
+            {0, 3},
+            {2, 3},
+            {5, 2},
+            {0, 3},
+            {2, 1},
+            {1, 2},
+            {0, 2},
+            {2, 3},
+            {0, 2},
+            {1, 2},
+            {4, 1},
+            {5, 1},
+            {1, 3},
+            {2, 2},
+            {3, 2},
+            {5, 1},
+            {2, 3},
+            {0, 2},
+            {4, 2},
+            {5, 3}
+    };
+
+    for (auto m : shuffleMoves) {
+        cube.turn(m);
+    }
+
+    auto movesCross2Corners = solveCrossAnd2Corners(cube, lookup);
+
+    for (auto m : movesCross2Corners) {
+        cube.turn(m.face, m.rotations);
+    }
+
+    int num2 = cube.numCornerSolved();
+
+    if (num2 < 2) {
+        std::cout << "2 Corner did not work!" << "\n";
+
+        RubiksCube newCube;
+        for (auto m : shuffleMoves) {
+            newCube.turn(m);
+        }
+
+        for (auto m : movesCross2Corners) {
+            newCube.turn(m);
+        }
+
+        int newNum = newCube.numCornerSolved();
+
+        std::cout << "For a new cube we solved " << newNum << " corners." << "\n";
+
+        return;
+    }
+}
+
 int main() {
     Lookup lookup;
 
-//    lookup.makeCrossAnd2Corners(5);
-//    printMapSize(lookup.crossAnd2Corners);
+    lookup.makeCrossAnd2Corners(6);
+    printMapSize(lookup.crossAnd2Corners);
+
     lookup.makeCrossAnd3Corners(6);
     printMapSize(lookup.crossAnd3Corners);
 
-    return 69;
-//    lookup.makeFirstTwoLayers(6);
-//    printMapSize(lookup.firstTwoLayers);
+    lookup.makeFirstTwoLayers(6);
+    printMapSize(lookup.firstTwoLayers);
 
-    auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 10; i++) {
+    int numSolves = 1000;
+    auto startGlob = std::chrono::high_resolution_clock::now();
+
+    long long sumTime = 0;
+    double maxTime = 0;
+
+    for (int i = 0; i < numSolves; i++) {
+        auto start = std::chrono::high_resolution_clock::now();
+
         RubiksCube cube;
 
-        auto shuffleMoves = cube.shuffle(30);
-        std::cout << "Shuffling moves..." << "\n";
-        printMoves(shuffleMoves);
+        auto shuffleMoves = cube.shuffle(30, false, i);
 
+        auto start2Corners = std::chrono::high_resolution_clock::now();
+        auto movesCross2Corners = solveCrossAnd2Corners(cube, lookup);
+        auto end2Corners = std::chrono::high_resolution_clock::now();
+
+        for (auto m : movesCross2Corners) {
+            cube.turn(m.face, m.rotations);
+        }
+
+        int num2 = cube.numCornerSolved();
+
+        if (num2 < 2) {
+            std::cout << "Nuh uh!" << "\n";
+            return 69;
+        }
+
+        auto start3Corners = std::chrono::high_resolution_clock::now();
         auto movesCross3Corners = solveCrossAnd3Corners(cube, lookup);
-        std::cout << "Three corners found with these moves:" << "\n";
-        printMoves(movesCross3Corners);
+        auto end3Corners = std::chrono::high_resolution_clock::now();
+
+
+        for (auto m : movesCross3Corners) {
+            cube.turn(m.face, m.rotations);
+        }
+
+        int num3 = cube.numCornerSolved();
+
+        if (num3 < 3) {
+            std::cout << "Nuh uh!" << "\n";
+            return 69;
+        }
+
+        auto start4Corners = std::chrono::high_resolution_clock::now();
+        auto movesFullLayer = solveFirstTwoLayers(cube, lookup);
+        auto end4Corners = std::chrono::high_resolution_clock::now();
+
+        for (auto m : movesFullLayer) {
+            cube.turn(m.face, m.rotations);
+        }
+
+        int num4 = cube.numCornerSolved();
+        if (num4 != 4) {
+            std::cout << "Bruh.." << "\r";
+            return 2;
+        }
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+        sumTime += duration;
+
+        auto currentTime = static_cast<double>(duration) / 1000.0;
+
+        if (currentTime > maxTime) {
+            maxTime = currentTime;
+        }
+
+        // Time substeps!
+
+        std::cout << "Solved " << i + 1 << "/" << numSolves << " cubes.";
+        std::cout << " This one in " << currentTime << " ms.";
+        std::cout << " Average time: " << static_cast<double>(sumTime) / (static_cast<double>(i + 1) * 1000.0) << " ms.";
+        std::cout <<  " Max time: " << maxTime << " ms." << "\n";
+
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Found solutions in " << duration / 1000 << " milliseconds." << std::endl;
-
-//    auto start = std::chrono::high_resolution_clock::now();
-//    auto movesCross2Corners = solveCrossAnd2Corners(cube, lookup);
-//    std::cout << "Two corners found with these moves:" << "\n";
-//    printMoves(movesCross2Corners);
-//    auto movesCross3Corners = solveCrossAnd3Corners(cube, lookup);
-//    std::cout << "Three corners found with these moves:" << "\n";
-//    printMoves(movesCross3Corners);
-//    auto movesFullLayers = solveFirstTwoLayers(cube, lookup);
-//    std::cout << "Full layer found with these moves:" << "\n";
-//    printMoves(movesFullLayers);
-//
-//    auto end = std::chrono::high_resolution_clock::now();
-//    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-//    std::cout << "Found solution in " << duration / 1000 << " milliseconds." << std::endl;
-//
-//    std::cout << "Solving moves..." << "\n";
-//
-//    std::vector<Move> moves;
-//    for (auto m : movesCross2Corners) {
-//        moves.push_back(m);
-//    }
-//
-//    for (auto m : movesCross3Corners) {
-//        moves.push_back(m);
-//    }
-//
-//    for (auto m : movesFullLayers) {
-//        moves.push_back(m);
-//    }
-//
-//    printMoves(moves);
+    auto endGlob = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endGlob - startGlob).count();
+    std::cout << "Found solutions in " << static_cast<double>(duration) / 1000.0 << " milliseconds." << std::endl;
+    std::cout << "Average time: " << static_cast<double>(duration) / 1000.0 / static_cast<double>(numSolves) << " milliseconds." << std::endl;
 }
 

@@ -7,7 +7,6 @@
 
 #include <array>
 #include <string>
-#include <map>
 
 struct Move{
     int face;
@@ -80,16 +79,18 @@ public:
 
     std::array<short, 48> cube = {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3};
     void turn(int face, int rotations);
+    void turn(Move m);
 
     void print();
 
     bool solvedWhiteCross();
     int numCornerSolved();
-    std::vector<Move> shuffle(int numMoves, bool print = false);
+    std::vector<Move> shuffle(int numMoves, bool print = false, unsigned int seed = 0);
 
     std::array<unsigned int, 4> hashFirstTwoLayers();
     std::array<unsigned int, 4> hashCrossAnd2Corners();
     std::array<unsigned int, 4> hashCrossAnd3Corners();
+    std::array<unsigned int, 4> hashFirstTwoAndYellow();
 
     inline static unsigned short convertBase5ToBin(int a, int b, int c);
 
