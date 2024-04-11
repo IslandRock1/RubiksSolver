@@ -361,13 +361,13 @@ void TestSolver() {
 int main() {
     Lookup lookup;
 
-    lookup.makeCrossAnd2Corners(6);
+    lookup.makeCrossAnd2Corners(7);
     printMapSize(lookup.crossAnd2Corners);
 
-    lookup.makeCrossAnd3Corners(6);
-    printMapSize(lookup.crossAnd3Corners);
+//    lookup.makeCrossAnd3Corners(6);
+//    printMapSize(lookup.crossAnd3Corners);
 
-    lookup.makeFirstTwoLayers(6);
+    lookup.makeFirstTwoLayers(7);
     printMapSize(lookup.firstTwoLayers);
 
     int numSolves = 1000;
@@ -398,21 +398,21 @@ int main() {
             return 69;
         }
 
-        auto start3Corners = std::chrono::high_resolution_clock::now();
-        auto movesCross3Corners = solveCrossAnd3Corners(cube, lookup);
-        auto end3Corners = std::chrono::high_resolution_clock::now();
-
-
-        for (auto m : movesCross3Corners) {
-            cube.turn(m.face, m.rotations);
-        }
-
-        int num3 = cube.numCornerSolved();
-
-        if (num3 < 3) {
-            std::cout << "Nuh uh!" << "\n";
-            return 69;
-        }
+//        auto start3Corners = std::chrono::high_resolution_clock::now();
+//        auto movesCross3Corners = solveCrossAnd3Corners(cube, lookup);
+//        auto end3Corners = std::chrono::high_resolution_clock::now();
+//
+//
+//        for (auto m : movesCross3Corners) {
+//            cube.turn(m.face, m.rotations);
+//        }
+//
+//        int num3 = cube.numCornerSolved();
+//
+//        if (num3 < 3) {
+//            std::cout << "Nuh uh!" << "\n";
+//            return 69;
+//        }
 
         auto start4Corners = std::chrono::high_resolution_clock::now();
         auto movesFullLayer = solveFirstTwoLayers(cube, lookup);
