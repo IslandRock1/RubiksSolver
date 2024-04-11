@@ -31,22 +31,42 @@ enum Hash {
     Full
 };
 
+std::vector<char> convertVectorMovesToChar(std::vector<Move> moves) {
+    std::vector<char> out;
+
+    for (auto m : moves) {
+        out.push_back(Lookup::moveToChar(m));
+    }
+
+    return out;
+}
+
+std::vector<Move> convertVectorCharToMove(std::vector<char> moves) {
+    std::vector<Move> out;
+
+    for (auto m : moves) {
+        out.push_back(Lookup::charToMove(m));
+    }
+
+    return out;
+}
+
 std::vector<Move> execEveryMove(
         RubiksCube &cube,
         int depth,
         std::vector<Move> &moves,
-        std::map<std::array<unsigned int, 4>, std::vector<Move>> &lookup,
+        std::map<std::array<unsigned int, 4>, std::vector<char>> &lookup,
         Hash hash
         )
 {
 
-    std::_Rb_tree_iterator<std::pair<const std::array<unsigned int, 4>, std::vector<Move>>> lookupSolution;
+    std::_Rb_tree_iterator<std::pair<const std::array<unsigned int, 4>, std::vector<char>>> lookupSolution;
     switch (hash) {
         case Two:
         {
             lookupSolution = lookup.find(cube.hashCrossAnd2Corners());
             if (lookupSolution != lookup.end()) {
-                return addMovesWithLookup(moves, lookup[cube.hashCrossAnd2Corners()]);
+                return addMovesWithLookup(moves, convertVectorCharToMove(lookup[cube.hashCrossAnd2Corners()]));
             }
         } break;
 
@@ -54,7 +74,7 @@ std::vector<Move> execEveryMove(
         {
             lookupSolution = lookup.find(cube.hashCrossAnd3Corners());
             if (lookupSolution != lookup.end()) {
-                return addMovesWithLookup(moves, lookup[cube.hashCrossAnd3Corners()]);
+                return addMovesWithLookup(moves, convertVectorCharToMove(lookup[cube.hashCrossAnd3Corners()]));
             }
         } break;
 
@@ -62,7 +82,7 @@ std::vector<Move> execEveryMove(
         {
             lookupSolution = lookup.find(cube.hashFirstTwoLayers());
             if (lookupSolution != lookup.end()) {
-                return addMovesWithLookup(moves, lookup[cube.hashFirstTwoLayers()]);
+                return addMovesWithLookup(moves, convertVectorCharToMove(lookup[cube.hashFirstTwoLayers()]));
             }
         }
     }
@@ -178,7 +198,7 @@ void testHashSpeed() {
     std::cout << "Time taken by hash-function: " << duration.count() / 1000 << " milliseconds" << std::endl;
 }
 
-void printMapSize(const std::map<std::array<unsigned int, 4>, std::vector<Move>>& myMap) {
+void printMapSize(const std::map<std::array<unsigned int, 4>, std::vector<char>>& myMap) {
     auto start = std::chrono::high_resolution_clock::now();
     std::size_t totalSize = 0;
 
@@ -209,7 +229,9 @@ std::vector<Move> solveCrossAnd2Corners(RubiksCube &cube, Lookup &lookup) {
         std::reverse(hashMoves.begin(), hashMoves.end());
 
         for (auto m : hashMoves) {
-            outMoves.push_back({m.face, 4 - m.rotations});
+
+            Move mov = Lookup::charToMove(m);
+            outMoves.push_back({mov.face, 4 - mov.rotations});
         }
 
         std::reverse(hashMoves.begin(), hashMoves.end());
@@ -238,7 +260,8 @@ std::vector<Move> solveCrossAnd3Corners(RubiksCube &cube, Lookup &lookup) {
         std::reverse(hashMoves.begin(), hashMoves.end());
 
         for (auto m : hashMoves) {
-            outMoves.push_back({m.face, 4 - m.rotations});
+            Move mov = Lookup::charToMove(m);
+            outMoves.push_back({mov.face, 4 - mov.rotations});
         }
 
         std::reverse(hashMoves.begin(), hashMoves.end());
@@ -267,7 +290,8 @@ std::vector<Move> solveFirstTwoLayers(RubiksCube &cube, Lookup &lookup) {
         std::reverse(hashMoves.begin(), hashMoves.end());
 
         for (auto m : hashMoves) {
-            outMoves.push_back({m.face, 4 - m.rotations});
+            Move mov = Lookup::charToMove(m);
+            outMoves.push_back({mov.face, 4 - mov.rotations});
         }
 
         std::reverse(hashMoves.begin(), hashMoves.end());
@@ -285,90 +309,21 @@ std::vector<Move> solveFirstTwoLayers(RubiksCube &cube, Lookup &lookup) {
     throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
 }
 
-void TestSolver() {
-    Lookup lookup;
-
-    lookup.makeCrossAnd2Corners(6);
-    printMapSize(lookup.crossAnd2Corners);
-
-    RubiksCube cube;
-
-    std::vector<Move> shuffleMoves = {
-            {1, 3},
-            {3, 1},
-            {2, 3},
-            {0, 3},
-            {2, 3},
-            {1, 1},
-            {0, 3},
-            {2, 1},
-            {4, 3},
-            {1, 2},
-            {0, 3},
-            {2, 3},
-            {5, 2},
-            {0, 3},
-            {2, 1},
-            {1, 2},
-            {0, 2},
-            {2, 3},
-            {0, 2},
-            {1, 2},
-            {4, 1},
-            {5, 1},
-            {1, 3},
-            {2, 2},
-            {3, 2},
-            {5, 1},
-            {2, 3},
-            {0, 2},
-            {4, 2},
-            {5, 3}
-    };
-
-    for (auto m : shuffleMoves) {
-        cube.turn(m);
-    }
-
-    auto movesCross2Corners = solveCrossAnd2Corners(cube, lookup);
-
-    for (auto m : movesCross2Corners) {
-        cube.turn(m.face, m.rotations);
-    }
-
-    int num2 = cube.numCornerSolved();
-
-    if (num2 < 2) {
-        std::cout << "2 Corner did not work!" << "\n";
-
-        RubiksCube newCube;
-        for (auto m : shuffleMoves) {
-            newCube.turn(m);
-        }
-
-        for (auto m : movesCross2Corners) {
-            newCube.turn(m);
-        }
-
-        int newNum = newCube.numCornerSolved();
-
-        std::cout << "For a new cube we solved " << newNum << " corners." << "\n";
-
-        return;
-    }
-}
-
 int main() {
     Lookup lookup;
 
-    lookup.makeCrossAnd2Corners(7);
+    int num = 4;
+
+    lookup.makeCrossAnd2Corners(num);
     printMapSize(lookup.crossAnd2Corners);
 
-//    lookup.makeCrossAnd3Corners(6);
-//    printMapSize(lookup.crossAnd3Corners);
+    lookup.makeCrossAnd3Corners(num);
+    printMapSize(lookup.crossAnd3Corners);
 
-    lookup.makeFirstTwoLayers(7);
+    lookup.makeFirstTwoLayers(num);
     printMapSize(lookup.firstTwoLayers);
+
+    return 69;
 
     int numSolves = 1000;
     auto startGlob = std::chrono::high_resolution_clock::now();
