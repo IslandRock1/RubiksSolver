@@ -103,8 +103,6 @@ void generateLookupFirstTwoLayers(
         cube.turn(m.face, 4 - m.rotations);
         moves.pop_back();
     }
-
-
 }
 
 void generateLookupCrossAnd2Corners(
