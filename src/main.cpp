@@ -309,10 +309,39 @@ std::vector<Move> solveFirstTwoLayers(RubiksCube &cube, Lookup &lookup) {
     throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
 }
 
+void time() {
+    RubiksCube cube;
+    int num = 6;
+    cube.shuffle(num);
+    auto hash0 = cube.hashCrossAnd2Corners();
+    auto hash1 = cube.hashCrossAnd3Corners();
+    auto hash2 = cube.hashFirstTwoLayers();
+
+    Lookup l;
+    l.makeCrossAnd2Corners(num);
+    l.makeCrossAnd3Corners(num);
+    l.makeFirstTwoLayers(num);
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    for (int i = 0; i < 10000000; i++) {
+        l.crossAnd2Corners[hash0];
+        l.crossAnd3Corners[hash1];
+        l.firstTwoLayers[hash2];
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "Used " << static_cast<float>(duration) / 1000.0 << " milliseconds." << "\n";
+}
+
 int main() {
+    time();
+    return 1;
+
     Lookup lookup;
 
-    int num = 4;
+    int num = 5;
 
     lookup.makeCrossAnd2Corners(num);
     printMapSize(lookup.crossAnd2Corners);
