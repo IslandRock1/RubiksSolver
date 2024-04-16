@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <fstream>
 
 #include "Lookup.hpp"
 
@@ -223,3 +224,68 @@ void Lookup::makeCrossAnd3Corners(int depth) {
     std::cout << "Size of 3 corner table is " << crossAnd3Corners.size() << " in " << durLookup.count() / 1000 / 1000 << " seconds." << "\n";
 }
 
+void Lookup::save(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title) {
+    std::ofstream file(title);
+
+    for (const auto& entry : map) {
+        auto key = entry.first;
+        auto moves = entry.second;
+
+        for (auto val : key) {
+
+            auto str = std::to_string(val);
+
+            for (auto i = 0; i < 12 - str.length(); i++) {
+                file << "0";
+            }
+
+            file << str;
+        }
+
+        for (auto m : moves) {
+            file << m;
+        }
+
+        file << "\n";
+    }
+
+    file.close();
+}
+
+unsigned int create_int(std::string &str) {
+    unsigned int i = 0;
+    for (auto c : str) {
+        i *= 10;
+        i += c - '0';
+    }
+
+    return i;
+}
+
+void Lookup::load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title) {
+    std::ifstream file(title);
+    std::string text;
+
+    while (std::getline(file, text)) {
+        std::array<unsigned int, 4> key = {0, 0, 0, 0};
+
+        std::string num = text.substr(0, 12);
+        key[0] = create_int(num);
+        num = text.substr(12, 12);
+        key[1] = create_int(num);
+        num = text.substr(24, 12);
+        key[2] = create_int(num);
+        num = text.substr(36, 12);
+        key[3] = create_int(num);
+
+        std::vector<char> moves;
+        auto movs = text.substr(48);
+        for (auto m : movs) {
+            moves.push_back(m);
+        }
+
+        map[key] = moves;
+    }
+
+    file.close();
+}
