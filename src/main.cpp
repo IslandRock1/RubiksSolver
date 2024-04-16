@@ -335,7 +335,56 @@ void time() {
     std::cout << "Used " << static_cast<float>(duration) / 1000.0 << " milliseconds." << "\n";
 }
 
+void compareMap(std::map<std::array<unsigned int, 4>, std::vector<char>> &map0, std::map<std::array<unsigned int, 4>, std::vector<char>> &map1) {
+
+    for (const auto& entry : map0) {
+        auto key = entry.first;
+        auto moves = entry.second;
+
+        if (map1[key] != moves) {
+            std::cout << "Nuh" << "\n";
+            throw std::runtime_error("Huh..");
+        }
+    }
+
+    std::cout << "Comparison succsesfull!" << "\n";
+}
+
+void loadMaps(Lookup &l) {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    std::string title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/firstTwoLayers7D.txt";
+    Lookup::load(l.firstTwoLayers, title);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "Used " << static_cast<float>(duration) / 1000.0 << " milliseconds to load table." << "\n";
+}
+
+void saveMaps() {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    std::string title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/firstTwoLayers7D.txt";
+
+    Lookup l;
+    l.makeFirstTwoLayers(7);
+
+    Lookup::save(l.firstTwoLayers, title);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "Used " << static_cast<float>(duration) / 1000.0 << " milliseconds to save table." << "\n";
+}
+
 int main() {
+    saveMaps();
+
+    Lookup l;
+    loadMaps(l);
+
+    return 1;
+
+
     time();
     return 1;
 
