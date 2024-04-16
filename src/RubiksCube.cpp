@@ -195,6 +195,31 @@ std::array<unsigned int, 4> RubiksCube::hashFirstTwoLayers() {
     return vals;
 }
 
+std::array<unsigned int, 4> RubiksCube::hashFullCube() {
+    std::array<unsigned int, 4> vals = {0, 0, 0, 0};
+
+    for (int i = 0; i < 4; i++) {
+        unsigned int val = 0;
+        for (int k = 0; k < 4; k++) {
+
+            auto ix0 = 12 * i + 3 * k + 0;
+            auto ix1 = ix0 + 1;
+            auto ix2 = ix0 + 2;
+
+            auto face0 = cube[ix0];
+            auto face1 = cube[ix1];
+            auto face2 = cube[ix2];
+
+            auto convert = convertBase5ToBin(face0, face1, face2);
+            val = val << 8;
+            val |= convert;
+        }
+        vals[i] = val;
+    }
+
+    return vals;
+}
+
 void RubiksCube::print() {
     int space = 0;
 

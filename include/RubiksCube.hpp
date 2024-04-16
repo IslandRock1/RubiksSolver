@@ -91,6 +91,7 @@ public:
     std::array<unsigned int, 4> hashCrossAnd2Corners();
     std::array<unsigned int, 4> hashCrossAnd3Corners();
     std::array<unsigned int, 4> hashFirstTwoAndYellow();
+    std::array<unsigned int, 4> hashFullCube();
 
     inline static unsigned short convertBase5ToBin(int a, int b, int c);
 
