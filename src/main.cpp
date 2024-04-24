@@ -28,7 +28,8 @@ std::vector<Move> addMovesWithLookup(const std::vector<Move> moves, std::vector<
 enum Hash {
     Two,
     Three,
-    Full
+    Full,
+    Whole
 };
 
 std::vector<char> convertVectorMovesToChar(std::vector<Move> moves) {
@@ -84,7 +85,15 @@ std::vector<Move> execEveryMove(
             if (lookupSolution != lookup.end()) {
                 return addMovesWithLookup(moves, convertVectorCharToMove(lookup[cube.hashFirstTwoLayers()]));
             }
-        }
+        } break;
+
+        case Whole:
+        {
+            lookupSolution = lookup.find(cube.hashFullCube());
+            if (lookupSolution != lookup.end()) {
+                return addMovesWithLookup(moves, convertVectorCharToMove(lookup[cube.hashFullCube()]));
+            }
+        } break;
     }
 
     if (depth == 0) {
@@ -202,11 +211,18 @@ void printMapSize(const std::map<std::array<unsigned int, 4>, std::vector<char>>
     auto start = std::chrono::high_resolution_clock::now();
     std::size_t totalSize = 0;
 
+    long long totalMoves = 0;
+    long long numEntries = 0;
+
     for (const auto& entry : myMap) {
         totalSize += sizeof(entry.first); // Size of the key
-        for (const auto& move : entry.second) {
+
+        for (const auto move : entry.second) {
             totalSize += sizeof(move); // Size of each Move object
+            totalMoves++;
         }
+
+        numEntries++;
     }
 
     // Convert total size to megabytes
@@ -214,7 +230,10 @@ void printMapSize(const std::map<std::array<unsigned int, 4>, std::vector<char>>
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
-    std::cout << "Total size of map: " << std::fixed << std::setprecision(2) << totalSizeMB << " MB. Size found in " << duration.count() / 1000 << " milliseconds." << std::endl;
+    std::cout << "Total moves: " << totalMoves << " | Avg moves: " << static_cast<double>(totalMoves) / static_cast<double>(numEntries) << " | Num entries: " << numEntries << ".\n";
+
+    std::cout << "Total size of map: " << totalSize << " bytes. Size found in " << duration.count() / 1000 << " milliseconds." << std::endl;
+    // std::cout << "Total size of map: " << std::fixed << std::setprecision(2) << totalSizeMB << " MB. Size found in " << duration.count() / 1000 << " milliseconds." << std::endl;
 }
 
 std::vector<Move> solveCrossAnd2Corners(RubiksCube &cube, Lookup &lookup) {
@@ -309,6 +328,36 @@ std::vector<Move> solveFirstTwoLayers(RubiksCube &cube, Lookup &lookup) {
     throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
 }
 
+std::vector<Move> solveWhole(RubiksCube &cube, Lookup &lookup) {
+    if (cube.solved()) {return {};}
+
+    auto lookupSolution = lookup.wholeCube.find(cube.hashFullCube());
+    if (lookupSolution != lookup.wholeCube.end()) {
+        std::vector<Move> outMoves;
+
+        auto hashMoves = lookup.wholeCube[cube.hashFullCube()];
+        std::reverse(hashMoves.begin(), hashMoves.end());
+
+        for (auto m : hashMoves) {
+            Move mov = Lookup::charToMove(m);
+            outMoves.push_back({mov.face, 4 - mov.rotations});
+        }
+
+        std::reverse(hashMoves.begin(), hashMoves.end());
+        return outMoves;
+    }
+
+    std::vector<Move> moves;
+    for (unsigned short depth = 4; depth < 10; depth++) {
+        auto solvingMoves = execEveryMove(cube, depth, moves, lookup.wholeCube, Hash::Whole);
+        if (!solvingMoves.empty()) {
+            return solvingMoves;
+        }
+    }
+
+    throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
+}
+
 void time() {
     RubiksCube cube;
     int num = 6;
@@ -361,15 +410,12 @@ void loadMaps(Lookup &l) {
     std::cout << "Used " << static_cast<float>(duration) / 1000.0 << " milliseconds to load table." << "\n";
 }
 
-void saveMaps() {
+void saveMaps(std::map<std::array<unsigned int, 4>, std::vector<char>> &map) {
     auto start = std::chrono::high_resolution_clock::now();
 
-    std::string title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/firstTwoLayers7D.txt";
+    std::string title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/wholeCube7D.txt";
 
-    Lookup l;
-    l.makeFirstTwoLayers(7);
-
-    Lookup::save(l.firstTwoLayers, title);
+    Lookup::save(map, title);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -377,94 +423,115 @@ void saveMaps() {
 }
 
 int main() {
-    saveMaps();
-
-    Lookup l;
-    loadMaps(l);
-
-    return 1;
-
-
-    time();
-    return 1;
-
     Lookup lookup;
 
-    int num = 5;
-
-    lookup.makeCrossAnd2Corners(num);
+    lookup.makeCrossAnd2Corners(7);
     printMapSize(lookup.crossAnd2Corners);
 
-    lookup.makeCrossAnd3Corners(num);
-    printMapSize(lookup.crossAnd3Corners);
-
-    lookup.makeFirstTwoLayers(num);
+    lookup.makeFirstTwoLayers(7);
     printMapSize(lookup.firstTwoLayers);
 
-    return 69;
+    lookup.makeWholeCube(7);
+    printMapSize(lookup.wholeCube);
 
-    int numSolves = 1000;
+    std::string title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/lastLayer.txt";
+    Lookup::load(lookup.solveLastLayer, title);
+    printMapSize(lookup.solveLastLayer);
+
+    int numSolves = 10000000;
     auto startGlob = std::chrono::high_resolution_clock::now();
 
     long long sumTime = 0;
     double maxTime = 0;
+    int llSolved = 0;
 
     for (int i = 0; i < numSolves; i++) {
         auto start = std::chrono::high_resolution_clock::now();
 
         RubiksCube cube;
 
-        auto shuffleMoves = cube.shuffle(30, false, i);
+        auto shuffleMoves = cube.shuffle(30, false, i * 2376);
 
         auto start2Corners = std::chrono::high_resolution_clock::now();
         auto movesCross2Corners = solveCrossAnd2Corners(cube, lookup);
         auto end2Corners = std::chrono::high_resolution_clock::now();
+        auto duration2Corners = std::chrono::duration_cast<std::chrono::microseconds>(end2Corners - start2Corners).count();
 
         for (auto m : movesCross2Corners) {
             cube.turn(m.face, m.rotations);
         }
 
         int num2 = cube.numCornerSolved();
+        bool crossSolved = cube.solvedWhiteCross();
 
         if (num2 < 2) {
             std::cout << "Nuh uh!" << "\n";
             return 69;
         }
 
-//        auto start3Corners = std::chrono::high_resolution_clock::now();
-//        auto movesCross3Corners = solveCrossAnd3Corners(cube, lookup);
-//        auto end3Corners = std::chrono::high_resolution_clock::now();
-//
-//
-//        for (auto m : movesCross3Corners) {
-//            cube.turn(m.face, m.rotations);
-//        }
-//
-//        int num3 = cube.numCornerSolved();
-//
-//        if (num3 < 3) {
-//            std::cout << "Nuh uh!" << "\n";
-//            return 69;
-//        }
+        if (!crossSolved) {
+            throw std::runtime_error("Bruh.. cross not solved");
+        }
 
         auto start4Corners = std::chrono::high_resolution_clock::now();
         auto movesFullLayer = solveFirstTwoLayers(cube, lookup);
         auto end4Corners = std::chrono::high_resolution_clock::now();
+        auto duration4Corners = std::chrono::duration_cast<std::chrono::microseconds>(end4Corners - start4Corners).count();
 
         for (auto m : movesFullLayer) {
             cube.turn(m.face, m.rotations);
         }
 
         int num4 = cube.numCornerSolved();
+        crossSolved = cube.solvedWhiteCross();
+
         if (num4 != 4) {
             std::cout << "Bruh.." << "\r";
             return 2;
         }
 
+        if (!crossSolved) {
+            throw std::runtime_error("Bruh.. cross not solved");
+        }
+
+        bool inMap = false;
+        for (int t = 0; t < 4; t++) {
+            cube.turn(5, 1);
+            auto hash = cube.hashFullCube();
+
+            if (lookup.solveLastLayer.find(hash) != lookup.solveLastLayer.end()) {
+                inMap = true;
+                break;
+            }
+        }
+
+        if (!inMap) {
+            auto hash = cube.hashFullCube();
+
+            auto movesWhole = solveWhole(cube, lookup);
+
+            for (auto m : movesWhole) {
+                cube.turn(m.face, m.rotations);
+            }
+
+            if (!cube.solved()) {
+                std::cout << "Whole cube not solved.." << "\n";
+                return 2;
+            }
+
+            lookup.solveLastLayer[hash] = convertVectorMovesToChar(movesWhole);
+            std::string titleLocal = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/lastLayer.txt";
+            Lookup::save(lookup.solveLastLayer, titleLocal);
+
+            llSolved++;
+        }
+
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
-        sumTime += duration;
+        if (!inMap) {
+            sumTime += duration;
+        }
 
         auto currentTime = static_cast<double>(duration) / 1000.0;
 
@@ -472,12 +539,14 @@ int main() {
             maxTime = currentTime;
         }
 
-        // Time substeps!
-
-        std::cout << "Solved " << i + 1 << "/" << numSolves << " cubes.";
-        std::cout << " This one in " << currentTime << " ms.";
-        std::cout << " Average time: " << static_cast<double>(sumTime) / (static_cast<double>(i + 1) * 1000.0) << " ms.";
-        std::cout <<  " Max time: " << maxTime << " ms." << "\n";
+        std::cout << "Unique cubes: ";
+        std::cout << lookup.solveLastLayer.size() << "/" << i + 1 << ".";
+        std::cout << " This one in " << currentTime << " ms. Sumtime: ";
+        std::cout << static_cast<double>(sumTime) / 1000.0 / 1000.0 / 60.0 / 60.0 << " hours. Average time: ";
+        std::cout << static_cast<double>(sumTime) / static_cast<double>(llSolved) / 1000.0 / 1000.0 << " seconds." << "\n";
+        //std::cout << static_cast<double>(duration2Corners) / 1000.0 << " ms. Time for first two layers: ";
+        //std::cout << static_cast<double>(duration4Corners) / 1000.0 << " ms." << "\n";
+        //std::cout << static_cast<double>(durationWhole) / 1000000.0 << " seconds." << "\n";
 
     }
 

@@ -16,10 +16,13 @@ public:
     std::map<std::array<unsigned int, 4>, std::vector<char>> firstTwoLayers;
     std::map<std::array<unsigned int, 4>, std::vector<char>> crossAnd2Corners;
     std::map<std::array<unsigned int, 4>, std::vector<char>> crossAnd3Corners;
+    std::map<std::array<unsigned int, 4>, std::vector<char>> solveLastLayer;
+    std::map<std::array<unsigned int, 4>, std::vector<char>> wholeCube;
 
     void makeFirstTwoLayers(int depth);
     void makeCrossAnd2Corners(int depth);
     void makeCrossAnd3Corners(int depth);
+    void makeWholeCube(int depth);
 
     static bool prune(Move &currentMove, Move &prevMove, Move &doublePrevMove);
 

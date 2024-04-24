@@ -85,6 +85,7 @@ public:
 
     bool solvedWhiteCross();
     int numCornerSolved();
+    bool solved();
     std::vector<Move> shuffle(int numMoves, bool print = false, unsigned int seed = 0);
 
     std::array<unsigned int, 4> hashFirstTwoLayers();
@@ -95,6 +96,8 @@ public:
 
     inline static unsigned short convertBase5ToBin(int a, int b, int c);
 
+    void turnWhite1();
+
 private:
     bool solvedRBCorner();
     bool solvedGRCorner();
@@ -102,7 +105,7 @@ private:
     bool solvedBOCorner();
 
     void turnWhite(int rotations);
-    void turnWhite1();
+    // void turnWhite1();
     void turnWhite2();
     void turnWhite3();
     void turnBlue(int rotations);

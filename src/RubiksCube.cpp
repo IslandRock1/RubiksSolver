@@ -237,6 +237,11 @@ void RubiksCube::print() {
     std::cout << "\n";
 }
 
+bool RubiksCube::solved() {
+    std::array<short, 48> tmp = {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3};
+    return (cube == tmp);
+}
+
 bool RubiksCube::solvedWhiteCross() {
     return (
             cube[1] == 0 &&

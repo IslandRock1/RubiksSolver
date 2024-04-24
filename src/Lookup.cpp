@@ -65,6 +65,56 @@ Move Lookup::charToMove(char moveChar) {
     return {face, rotations};
 }
 
+void generateLookupWholeCube(
+        std::map<std::array<unsigned int, 4>, std::vector<char>> &map,
+        std::vector<char> &moves,
+        RubiksCube &cube,
+        int depth
+        ) {
+    if (depth == 0) { return;}
+
+    auto vals = cube.hashFullCube();
+
+    if (map.find(vals) != map.end()) {
+        if (moves.size() < map[vals].size()) {
+            map[vals] = moves;
+        }
+    } else {
+        map[vals] = moves;
+    }
+
+    auto size = moves.size();
+    Move prevMove {7, 7};
+    Move doublePrevMove {7, 7};
+
+    if (size > 1) {
+        prevMove = Lookup::charToMove(moves[size - 1]);
+        doublePrevMove = Lookup::charToMove(moves[size - 2]);
+    } else if (size > 0) {
+        prevMove = Lookup::charToMove(moves[size - 1]);
+    }
+
+    for (auto m : RubiksConst::everyMove) {
+        if (depth == 1) {
+            if (m == RubiksConst::everyMove[3]) {
+                break;
+            }
+        }
+
+        if (Lookup::prune(m, prevMove, doublePrevMove)) { continue;}
+
+        if (depth == 9) {
+            std::cout << m.face << m.rotations << "\n";
+        }
+
+        moves.push_back(Lookup::moveToChar(m));
+        cube.turn(m.face, m.rotations);
+        generateLookupWholeCube(map, moves, cube, depth - 1);
+        cube.turn(m.face, 4 - m.rotations);
+        moves.pop_back();
+    }
+}
+
 void generateLookupFirstTwoLayers(
         std::map<std::array<unsigned int, 4>, std::vector<char>> &map,
         std::vector<char> &moves,
@@ -188,11 +238,65 @@ void generateLookupCrossAnd3Corners(
     }
 }
 
+void Lookup::makeWholeCube(int depth) {
+    auto start = std::chrono::high_resolution_clock::now();
+
+//    RubiksCube cube;
+//    std::vector<char> moves;
+//    generateLookupWholeCube(wholeCube, moves, cube, depth + 1);
+
+    std::string title;
+    switch (depth) {
+        case 8:
+        {
+            throw std::runtime_error("Sorry not yet");
+            title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/wholeCube8D.txt";
+        } break;
+
+        case 7:
+        {
+            title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/wholeCube7D.txt";
+        } break;
+
+        case 6:
+        {
+            title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/wholeCube6D.txt";
+        } break;
+
+        default:
+        {
+            throw std::runtime_error("What? Need better depth for makeWholeCube");
+        }
+    }
+
+    load(wholeCube, title);
+
+//    RubiksCube cube;
+//    std::vector<char> moves;
+//    generateLookupWholeCube(wholeCube, moves, cube, depth + 2);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto durLookup = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    std::cout << "Size of wholeCube table is " << wholeCube.size() << " in " << durLookup.count() / 1000 / 1000 << " seconds." << "\n";
+}
+
 void Lookup::makeFirstTwoLayers(int depth) {
     auto start = std::chrono::high_resolution_clock::now();
-    RubiksCube cube;
-    std::vector<char> moves;
-    generateLookupFirstTwoLayers(firstTwoLayers, moves, cube, depth + 1);
+//    RubiksCube cube;
+//    std::vector<char> moves;
+//    generateLookupFirstTwoLayers(firstTwoLayers, moves, cube, depth + 1);
+
+    std::string title;
+    if (depth == 7) {
+        title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/firstTwoLayers7D.txt";
+    } else if (depth == 6) {
+        title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/firstTwoLayers6D.txt";
+    } else {
+        throw std::runtime_error("Only depth 6 and 7 made.");
+    }
+
+    load(firstTwoLayers, title);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto durLookup = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -202,9 +306,20 @@ void Lookup::makeFirstTwoLayers(int depth) {
 
 void Lookup::makeCrossAnd2Corners(int depth) {
     auto start = std::chrono::high_resolution_clock::now();
-    RubiksCube cube;
-    std::vector<char> moves;
-    generateLookupCrossAnd2Corners(crossAnd2Corners, moves, cube, depth + 1);
+//    RubiksCube cube;
+//    std::vector<char> moves;
+//    generateLookupCrossAnd2Corners(crossAnd2Corners, moves, cube, depth + 1);
+
+    std::string title;
+    if (depth == 7) {
+        title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/crossAnd2Corners7D.txt";
+    } else if (depth == 6) {
+        title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/crossAnd2Corners6D.txt";
+    } else {
+        throw std::runtime_error("Only depth 6 and 7 made.");
+    }
+
+    load(crossAnd2Corners, title);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto durLookup = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
