@@ -399,6 +399,33 @@ void compareMap(std::map<std::array<unsigned int, 4>, std::vector<char>> &map0, 
     std::cout << "Comparison succsesfull!" << "\n";
 }
 
+void sizeMap(std::map<std::array<unsigned int, 4>, std::vector<char>> &map) {
+
+    long long totMoves = 0;
+    long long numEntries = 0;
+    int maxMoves = 0;
+    int minMoves = 1000;
+
+    for (const auto &entry : map) {
+        auto moves = entry.second;
+
+        totMoves += moves.size();
+        numEntries++;
+
+        if (moves.size() > maxMoves) {
+            maxMoves = moves.size();
+        }
+
+        if (moves.size() < minMoves) {
+            minMoves = moves.size();
+        }
+    }
+
+    std::cout << "Max moves: " << maxMoves << " | Min moves: " << minMoves << " | Total moves: ";
+    std::cout << totMoves << " | Avg moves: " << static_cast<double>(totMoves) / static_cast<double>(numEntries) << "\n";
+
+}
+
 void loadMaps(Lookup &l) {
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -423,6 +450,8 @@ void saveMaps(std::map<std::array<unsigned int, 4>, std::vector<char>> &map) {
 }
 
 int main() {
+    // throw std::runtime_error("Remember to implement solveTwoLayer Lookup!");
+
     Lookup lookup;
 
     lookup.makeCrossAnd2Corners(7);
@@ -450,7 +479,7 @@ int main() {
 
         RubiksCube cube;
 
-        auto shuffleMoves = cube.shuffle(30, false, i * 2376);
+        auto shuffleMoves = cube.shuffle(30, false, i);
 
         auto start2Corners = std::chrono::high_resolution_clock::now();
         auto movesCross2Corners = solveCrossAnd2Corners(cube, lookup);
