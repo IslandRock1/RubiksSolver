@@ -7,7 +7,7 @@
 #include "RubiksCube.hpp"
 #include "Lookup.hpp"
 
-std::vector<Move> addMovesWithLookup(const std::vector<Move> moves, std::vector<Move> lookupMoves, bool reverse = true) {
+std::vector<Move> addMovesWithLookup(const std::vector<Move>& moves, std::vector<Move> lookupMoves, bool reverse = true) {
     std::vector<Move> outMoves;
 
     for (auto m : moves) {
@@ -32,7 +32,7 @@ enum Hash {
     Whole
 };
 
-std::vector<char> convertVectorMovesToChar(std::vector<Move> moves) {
+std::vector<char> convertVectorMovesToChar(const std::vector<Move>& moves) {
     std::vector<char> out;
 
     for (auto m : moves) {
@@ -42,7 +42,7 @@ std::vector<char> convertVectorMovesToChar(std::vector<Move> moves) {
     return out;
 }
 
-std::vector<Move> convertVectorCharToMove(std::vector<char> moves) {
+std::vector<Move> convertVectorCharToMove(const std::vector<char>& moves) {
     std::vector<Move> out;
 
     for (auto m : moves) {
@@ -244,7 +244,6 @@ std::vector<Move> solveCrossAnd2Corners(RubiksCube &cube, Lookup &lookup) {
         std::vector<Move> outMoves;
 
         auto hashMoves = lookup.crossAnd2Corners[cube.hashCrossAnd2Corners()];
-
         std::reverse(hashMoves.begin(), hashMoves.end());
 
         for (auto m : hashMoves) {
@@ -260,36 +259,6 @@ std::vector<Move> solveCrossAnd2Corners(RubiksCube &cube, Lookup &lookup) {
     std::vector<Move> moves;
     for (unsigned short depth = 4; depth < 10; depth++) {
         auto solvingMoves = execEveryMove(cube, depth, moves, lookup.crossAnd2Corners, Hash::Two);
-        if (!solvingMoves.empty()) {
-            return solvingMoves;
-        }
-    }
-
-    throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
-}
-
-std::vector<Move> solveCrossAnd3Corners(RubiksCube &cube, Lookup &lookup) {
-    if ((cube.numCornerSolved() == 3) && cube.solvedWhiteCross()) {return {};}
-
-    auto lookupSolution = lookup.crossAnd3Corners.find(cube.hashCrossAnd3Corners());
-    if (lookupSolution != lookup.crossAnd3Corners.end()) {
-        std::vector<Move> outMoves;
-
-        auto hashMoves = lookup.crossAnd3Corners[cube.hashCrossAnd3Corners()];
-        std::reverse(hashMoves.begin(), hashMoves.end());
-
-        for (auto m : hashMoves) {
-            Move mov = Lookup::charToMove(m);
-            outMoves.push_back({mov.face, 4 - mov.rotations});
-        }
-
-        std::reverse(hashMoves.begin(), hashMoves.end());
-        return outMoves;
-    }
-
-    std::vector<Move> moves;
-    for (unsigned short depth = 4; depth < 10; depth++) {
-        auto solvingMoves = execEveryMove(cube, depth, moves, lookup.crossAnd3Corners, Hash::Three);
         if (!solvingMoves.empty()) {
             return solvingMoves;
         }
@@ -358,32 +327,6 @@ std::vector<Move> solveWhole(RubiksCube &cube, Lookup &lookup) {
     throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
 }
 
-void time() {
-    RubiksCube cube;
-    int num = 6;
-    cube.shuffle(num);
-    auto hash0 = cube.hashCrossAnd2Corners();
-    auto hash1 = cube.hashCrossAnd3Corners();
-    auto hash2 = cube.hashFirstTwoLayers();
-
-    Lookup l;
-    l.makeCrossAnd2Corners(num);
-    l.makeCrossAnd3Corners(num);
-    l.makeFirstTwoLayers(num);
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    for (int i = 0; i < 10000000; i++) {
-        l.crossAnd2Corners[hash0];
-        l.crossAnd3Corners[hash1];
-        l.firstTwoLayers[hash2];
-    }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Used " << static_cast<float>(duration) / 1000.0 << " milliseconds." << "\n";
-}
-
 void compareMap(std::map<std::array<unsigned int, 4>, std::vector<char>> &map0, std::map<std::array<unsigned int, 4>, std::vector<char>> &map1) {
 
     for (const auto& entry : map0) {
@@ -424,29 +367,6 @@ void sizeMap(std::map<std::array<unsigned int, 4>, std::vector<char>> &map) {
     std::cout << "Max moves: " << maxMoves << " | Min moves: " << minMoves << " | Total moves: ";
     std::cout << totMoves << " | Avg moves: " << static_cast<double>(totMoves) / static_cast<double>(numEntries) << "\n";
 
-}
-
-void loadMaps(Lookup &l) {
-    auto start = std::chrono::high_resolution_clock::now();
-
-    std::string title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/firstTwoLayers7D.txt";
-    Lookup::load(l.firstTwoLayers, title);
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Used " << static_cast<float>(duration) / 1000.0 << " milliseconds to load table." << "\n";
-}
-
-void saveMaps(std::map<std::array<unsigned int, 4>, std::vector<char>> &map) {
-    auto start = std::chrono::high_resolution_clock::now();
-
-    std::string title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/wholeCube7D.txt";
-
-    Lookup::save(map, title);
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "Used " << static_cast<float>(duration) / 1000.0 << " milliseconds to save table." << "\n";
 }
 
 int main() {
