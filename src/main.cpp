@@ -435,7 +435,6 @@ int main() {
     auto startGlob = std::chrono::high_resolution_clock::now();
 
     long long sumTime = 0;
-    double maxTime = 0;
     int llSolved = 0;
 
     Move topTurn = Move(5, 1);
@@ -445,7 +444,7 @@ int main() {
 
         RubiksCube cube;
 
-        auto shuffleMoves = cube.shuffle(30, false, i);
+        auto shuffleMoves = cube.shuffle(30, false, i * 1964);
 
         solveCrossAnd2Corners(cube, lookup);
         solveFirstTwoLayers(cube, lookup);
