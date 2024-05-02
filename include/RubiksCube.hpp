@@ -8,17 +8,15 @@
 #include <array>
 #include <string>
 
-struct Move{
-    int face;
-    int rotations;
-
-    bool operator==(const Move &other) const {
-        return (face == other.face) && (rotations == other.rotations);
-    }
-};
+#include "Move.hpp"
 
 namespace RubiksConst {
-    constexpr std::array<Move, 18> everyMove = {{{0, 1}, {0, 2}, {0, 3}, {1, 1}, {1, 2}, {1, 3}, {2, 1}, {2, 2}, {2, 3}, {3, 1}, {3, 2}, {3, 3}, {4, 1}, {4, 2}, {4, 3}, {5, 1}, {5, 2}, {5, 3}}};
+    constexpr std::array<Move, 18> everyMove = {
+            Move('A'), Move('B'), Move('C'), Move('D'), Move('E'), Move('F'),
+            Move('G'), Move('H'), Move('I'), Move('J'), Move('K'), Move('L'),
+            Move('M'), Move('N'), Move('O'), Move('P'), Move('Q'), Move('R')
+    };
+
     constexpr std::array<int, 3> oppositeFace = {5, 4, 3};
     constexpr std::array<int, 6> oppositeFaceAll = {5, 4, 3, 2, 1, 0};
 
@@ -85,18 +83,15 @@ public:
 
     bool solvedWhiteCross();
     int numCornerSolved();
-    bool solved();
+    bool solved() const;
     std::vector<Move> shuffle(int numMoves, bool print = false, unsigned int seed = 0);
 
     std::array<unsigned int, 4> hashFirstTwoLayers();
     std::array<unsigned int, 4> hashCrossAnd2Corners();
     std::array<unsigned int, 4> hashCrossAnd3Corners();
-    std::array<unsigned int, 4> hashFirstTwoAndYellow();
     std::array<unsigned int, 4> hashFullCube();
 
     inline static unsigned short convertBase5ToBin(int a, int b, int c);
-
-    void turnWhite1();
 
 private:
     bool solvedRBCorner();
@@ -105,7 +100,7 @@ private:
     bool solvedBOCorner();
 
     void turnWhite(int rotations);
-    // void turnWhite1();
+    void turnWhite1();
     void turnWhite2();
     void turnWhite3();
     void turnBlue(int rotations);

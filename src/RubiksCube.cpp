@@ -237,7 +237,7 @@ void RubiksCube::print() {
     std::cout << "\n";
 }
 
-bool RubiksCube::solved() {
+bool RubiksCube::solved() const {
     std::array<short, 48> tmp = {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3};
     return (cube == tmp);
 }
@@ -323,7 +323,7 @@ std::vector<Move> RubiksCube::shuffle(int numMoves, bool print, unsigned int see
         }
 
         turn(face, num);
-        shuffleMoves.push_back({face, num});
+        shuffleMoves.emplace_back(static_cast<short>(face), static_cast<short>(num));
 
         if (print) {
             std::cout << "f" << face << "n" << num << " | ";
@@ -335,35 +335,101 @@ std::vector<Move> RubiksCube::shuffle(int numMoves, bool print, unsigned int see
 }
 
 void RubiksCube::turn(Move m) {
-    turn(m.face, m.rotations);
+    switch (m.move) {
+        case 'A':
+        {
+            turnWhite1();
+        } break;
+
+        case 'B':
+        {
+            turnWhite2();
+        } break;
+
+        case 'C':
+        {
+            turnWhite3();
+        } break;
+
+        case 'D':
+        {
+            turnRed1();
+        } break;
+
+        case 'E':
+        {
+            turnRed2();
+        } break;
+
+        case 'F':
+        {
+            turnRed3();
+        } break;
+
+        case 'G':
+        {
+            turnBlue1();
+        } break;
+
+        case 'H':
+        {
+            turnBlue2();
+        } break;
+
+        case 'I':
+        {
+            turnBlue3();
+        } break;
+
+        case 'J':
+        {
+            turnGreen1();
+        } break;
+
+        case 'K':
+        {
+            turnGreen2();
+        } break;
+
+        case 'L':
+        {
+            turnGreen3();
+        } break;
+
+        case 'M':
+        {
+            turnOrange1();
+        } break;
+
+        case 'N':
+        {
+            turnOrange2();
+        } break;
+
+        case 'O':
+        {
+            turnOrange3();
+        } break;
+
+        case 'P':
+        {
+            turnYellow1();
+        } break;
+
+        case 'Q':
+        {
+            turnYellow2();
+        } break;
+
+        case 'R':
+        {
+            turnYellow3();
+        } break;
+    }
 }
 
 void RubiksCube::turn(int face, int rotations) {
-    switch (face) {
-        case 0: {
-            turnWhite(rotations);
-        } break;
-
-        case 1: {
-            turnRed(rotations);
-        } break;
-
-        case 2: {
-            turnBlue(rotations);
-        } break;
-
-        case 3: {
-            turnGreen(rotations);
-        } break;
-
-        case 4: {
-            turnOrange(rotations);
-        } break;
-
-        case 5: {
-            turnYellow(rotations);
-        } break;
-    }
+    turn(Move(face, rotations));
 }
 
 void RubiksCube::turnWhite(int rotations) {
