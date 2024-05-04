@@ -318,7 +318,17 @@ std::vector<Move> findFirstTwoLayers(RubiksCube &cube, Lookup &lookup) {
 }
 
 void solveFirstTwoLayers(RubiksCube &cube, Lookup &lookup) {
-    auto movesFullLayer = findFirstTwoLayers(cube, lookup);
+
+    auto hash = cube.hashFirstTwoLayers();
+    auto mapIter = lookup.solveTwoLayer.find(hash);
+
+    std::vector<Move> movesFullLayer;
+    if (mapIter != lookup.solveTwoLayer.end()) {
+        movesFullLayer = convertVectorCharToMove(lookup.solveTwoLayer[hash]);
+    } else {
+        movesFullLayer = findFirstTwoLayers(cube, lookup);
+        lookup.solveTwoLayer[hash] = convertVectorMovesToChar(movesFullLayer);
+    }
 
     for (auto m : movesFullLayer) {
         cube.turn(m);
@@ -382,6 +392,10 @@ Lookup loadAllMaps() {
     Lookup::load(lookup.solveLastLayer, title);
     printMapSize(lookup.solveLastLayer);
 
+    title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/twoLayer.txt";
+    Lookup::load(lookup.solveTwoLayer, title);
+    printMapSize(lookup.solveTwoLayer);
+
     return lookup;
 }
 
@@ -427,8 +441,42 @@ void sizeMap(std::map<std::array<unsigned int, 4>, std::vector<char>> &map) {
 
 }
 
+void findNumStartHash() {
+    std::map<std::array<unsigned int, 4>, bool> map;
+
+    Lookup lookup;
+
+    lookup.makeCrossAnd2Corners(7);
+    printMapSize(lookup.crossAnd2Corners);
+
+    RubiksCube cube;
+
+    long long iters = 1;
+    long long inMap = 0;
+    long long numEntries = 0;
+    while (true) {
+        cube.shuffle(50, false, iters);
+        solveCrossAnd2Corners(cube, lookup);
+
+        auto hash = cube.hashFirstTwoLayers();
+        auto mapIter = map.find(hash);
+
+        if (mapIter != map.end()) {
+            inMap++;
+        } else {
+            map[hash] = true;
+            numEntries++;
+        }
+
+        iters++;
+
+        if (iters % 1000 == 0) {
+            std::cout << "In map vs total iters: " << inMap << "/" << iters << ". Number of entries: " << numEntries << "\n";
+        }
+    }
+}
+
 int main() {
-    // throw std::runtime_error("Remember to implement solveTwoLayer Lookup!");
     auto lookup = loadAllMaps();
 
     int numSolves = 10000000;
@@ -444,7 +492,7 @@ int main() {
 
         RubiksCube cube;
 
-        auto shuffleMoves = cube.shuffle(30, false, i * 1964);
+        auto shuffleMoves = cube.shuffle(30, false, i);
 
         solveCrossAnd2Corners(cube, lookup);
         solveFirstTwoLayers(cube, lookup);
@@ -490,8 +538,10 @@ int main() {
 
         auto currentTime = static_cast<double>(duration) / 1000.0;
 
-        std::cout << "Hash table size: ";
+        std::cout << "LL: ";
         std::cout << lookup.solveLastLayer.size() << "/" << 15552 << ".";
+        std::cout << " TwoL: " << lookup.solveTwoLayer.size() << "/?";
+
         std::cout << " This one in " << currentTime << " ms. Sumtime: ";
         std::cout << static_cast<double>(sumTime) / 1000.0 / 1000.0 / 60.0 / 60.0 << " hours. Average time: ";
         std::cout << static_cast<double>(sumTime) / static_cast<double>(llSolved) / 1000.0 / 1000.0 << " seconds." << "\n";
