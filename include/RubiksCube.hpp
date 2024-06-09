@@ -93,6 +93,11 @@ public:
 
     inline static unsigned short convertBase5ToBin(int a, int b, int c);
 
+    void raiseCross();
+    void raiseTwoCorners();
+    void raiseTwoLayer();
+    void raiseSolved();
+
 private:
     bool solvedRBCorner();
     bool solvedGRCorner();

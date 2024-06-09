@@ -25,11 +25,20 @@ bool Lookup::prune(Move &currentMove, Move &prevMove, Move &doublePrevMove) {
     return false;
 }
 
+void printStruct(const Position& s) {
+    std::cout << "Array elements: ";
+    for (int i : s.currPos) {
+        std::cout << i << " ";
+    }
+    std::cout << "." << std::endl;
+}
+
 void generateLookupWholeCube(
         std::map<std::array<unsigned int, 4>, std::vector<char>> &map,
         std::vector<char> &moves,
         RubiksCube &cube,
-        int depth
+        int depth,
+        Position &currPos
         ) {
     if (depth == 0) { return;}
 
@@ -56,21 +65,22 @@ void generateLookupWholeCube(
 
     for (auto m : RubiksConst::everyMove) {
         if (depth == 1) {
-            if (m == RubiksConst::everyMove[3]) {
+            if (m.move >= RubiksConst::everyMove[0].move) {
                 break;
             }
         }
 
         if (Lookup::prune(m, prevMove, doublePrevMove)) { continue;}
 
-        if (depth == 9) {
-            std::cout << m.face << m.rotations << "\n";
+        if (depth > 7) {
+            currPos.currPos[depth] = m.move - 'A';
+            printStruct(currPos);
         }
 
 
         moves.push_back(m.move);
         cube.turn(m);
-        generateLookupWholeCube(map, moves, cube, depth - 1);
+        generateLookupWholeCube(map, moves, cube, depth - 1, currPos);
         cube.turn(m.face, 4 - m.rotations);
         moves.pop_back();
     }
@@ -234,7 +244,9 @@ void Lookup::makeWholeCube(int depth) {
 
 //    RubiksCube cube;
 //    std::vector<char> moves;
-//    generateLookupWholeCube(wholeCube, moves, cube, depth + 2);
+//
+//    Position currPos;
+//    generateLookupWholeCube(wholeCube, moves, cube, depth + 2, currPos);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto durLookup = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

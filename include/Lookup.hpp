@@ -11,6 +11,10 @@
 
 #include "RubiksCube.hpp"
 
+struct Position {
+    std::array<short, 10> currPos = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+};
+
 class Lookup {
 public:
     std::map<std::array<unsigned int, 4>, std::vector<char>> firstTwoLayers;

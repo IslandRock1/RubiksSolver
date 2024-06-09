@@ -334,6 +334,30 @@ std::vector<Move> RubiksCube::shuffle(int numMoves, bool print, unsigned int see
     return shuffleMoves;
 }
 
+void RubiksCube::raiseCross() {
+    if (!solvedWhiteCross()) {
+        throw std::runtime_error("Cross not solved.");
+    }
+}
+
+void RubiksCube::raiseTwoCorners() {
+    if (numCornerSolved() < 2) {
+        throw std::runtime_error("Not solved two corners.");
+    }
+}
+
+void RubiksCube::raiseTwoLayer() {
+    if (numCornerSolved() < 4) {
+        throw std::runtime_error("Not solved 4 corners");
+    }
+}
+
+void RubiksCube::raiseSolved() {
+    if (!solved()) {
+        throw std::runtime_error("Cube not solved.");
+    }
+}
+
 void RubiksCube::turn(Move m) {
     switch (m.move) {
         case 'A':
