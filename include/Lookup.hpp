@@ -23,6 +23,7 @@ public:
     std::map<std::array<unsigned int, 4>, std::vector<char>> solveLastLayer;
     std::map<std::array<unsigned int, 4>, std::vector<char>> solveTwoLayer;
     std::map<std::array<unsigned int, 4>, std::vector<char>> wholeCube;
+    std::map<std::array<unsigned int, 4>, std::vector<char>> combined;
 
     void makeFirstTwoLayers(int depth);
     void makeCrossAnd2Corners(int depth);

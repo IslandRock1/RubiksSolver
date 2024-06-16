@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <ctime>
 
+#include "solution.hpp"
 #include "RubiksCube.hpp"
 #include "Lookup.hpp"
 
@@ -34,6 +35,52 @@ enum Hash {
     Whole
 };
 
+std::vector<Move> bangMoves(std::vector<Move> &moves0, std::vector<Move> &moves1) {
+    std::vector<Move> outMoves;
+
+    for (auto &m : moves0) {
+        if (outMoves.empty()) {
+            outMoves.emplace_back(m);
+            continue;
+        }
+
+        if (outMoves.back().face == m.face) {
+            outMoves.back().rotations = (outMoves.back().rotations + m.rotations) % 4;
+            if (outMoves.back().rotations == 0) {
+                outMoves.pop_back();
+            }
+        } else if ((outMoves.size() > 1) and (outMoves.back().face == RubiksConst::oppositeFaceAll[m.face]) and (outMoves.at(outMoves.size() - 2).face == m.face)) {
+            auto ix = outMoves.size() - 2;
+            outMoves.at(ix).rotations = (outMoves.at(ix).rotations + m.rotations) % 4;
+        } else {
+            outMoves.emplace_back(m);
+        }
+    }
+
+    for (auto &m : moves1) {
+        if (outMoves.empty()) {
+            outMoves.emplace_back(m);
+            continue;
+        }
+
+        if (outMoves.back().face == m.face) {
+            outMoves.back().rotations = (outMoves.back().rotations + m.rotations) % 4;
+            if (outMoves.back().rotations == 0) {
+                outMoves.pop_back();
+            }
+        } else {
+            outMoves.emplace_back(m);
+        }
+    }
+
+    return outMoves;
+}
+
+std::vector<Move> bangMoves(std::vector<Move> &moves) {
+    std::vector<Move> rest;
+    return bangMoves(moves, rest);
+}
+
 std::vector<char> convertVectorMovesToChar(const std::vector<Move>& moves) {
     std::vector<char> out;
 
@@ -52,6 +99,61 @@ std::vector<Move> convertVectorCharToMove(const std::vector<char>& moves) {
     }
 
     return out;
+}
+
+std::vector<Move> execEveryMoveForCrossAndFirstTwo(
+        RubiksCube &cube,
+        int depth,
+        std::vector<Move> &moves,
+        std::map<std::array<unsigned int, 4>, std::vector<char>> &lookup,
+        std::vector<Solution> &solutions
+)
+{
+
+    auto lookupSolution = lookup.find(cube.hashCrossAnd2Corners());
+    if (lookupSolution != lookup.end()) {
+        auto solution = addMovesWithLookup(moves, convertVectorCharToMove(lookup[cube.hashCrossAnd2Corners()]));
+
+        Solution newSol;
+        newSol.crossMoves = solution;
+        solutions.push_back(newSol);
+    }
+
+    if (depth == 0) {
+        return {};
+    }
+
+    auto size = moves.size();
+
+    Move prevMove {7, 7};
+    Move doublePrevMove {7, 7};
+
+    if (size > 1) {
+        prevMove = moves[size - 1];
+        doublePrevMove = moves[size - 2];
+    } else if (size > 0) {
+        prevMove = moves[size - 1];
+    }
+
+    for (Move m : RubiksConst::everyMove)
+    {
+        if (Lookup::prune(m, prevMove, doublePrevMove)) { continue;}
+
+        moves.push_back(m);
+        cube.turn(m);
+
+        auto fromRecursed = execEveryMoveForCrossAndFirstTwo(cube, depth - 1, moves, lookup, solutions);
+
+        cube.turn(m.face, 4 - m.rotations);
+        moves.pop_back();
+
+        if (!fromRecursed.empty()) {
+            return fromRecursed;
+        }
+    }
+
+//    std::cout << "Returned from latest" << "\n";
+    return {};
 }
 
 std::vector<Move> execEveryMove(
@@ -239,54 +341,50 @@ void printMapSize(const std::map<std::array<unsigned int, 4>, std::vector<char>>
     // std::cout << "Total size of map: " << std::fixed << std::setprecision(2) << totalSizeMB << " MB. Size found in " << duration.count() / 1000 << " milliseconds." << std::endl;
 }
 
-std::vector<Move> findCrossAnd2Corners(RubiksCube &cube, Lookup &lookup) {
+std::vector<Solution> findCrossAnd2Corners(RubiksCube &cube, Lookup &lookup) {
     if ((cube.numCornerSolved() == 2) && cube.solvedWhiteCross()) {return {};}
 
-    auto lookupSolution = lookup.crossAnd2Corners.find(cube.hashCrossAnd2Corners());
-    if (lookupSolution != lookup.crossAnd2Corners.end()) {
-        std::vector<Move> outMoves;
-
-        auto hashMoves = lookup.crossAnd2Corners[cube.hashCrossAnd2Corners()];
-        std::reverse(hashMoves.begin(), hashMoves.end());
-
-        for (auto m : hashMoves) {
-
-            Move mov = Move(m);
-            outMoves.emplace_back(mov.face, static_cast<short>(4 - mov.rotations));
-        }
-
-        std::reverse(hashMoves.begin(), hashMoves.end());
-        return outMoves;
-    }
-
     std::vector<Move> moves;
-    for (unsigned short depth = 4; depth < 10; depth++) {
-        auto solvingMoves = execEveryMove(cube, depth, moves, lookup.crossAnd2Corners, Hash::Two);
-        if (!solvingMoves.empty()) {
-            return solvingMoves;
-        }
-    }
+    std::vector<Solution> solutions;
+    auto solvingMoves = execEveryMoveForCrossAndFirstTwo(cube, 5, moves, lookup.crossAnd2Corners, solutions);
 
-    throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
+    if (solutions.empty()) {
+        throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
+    } else {
+        return solutions;
+    }
 }
 
-void solveCrossAnd2Corners(RubiksCube &cube, Lookup &lookup) {
-    auto movesCross2Corners = findCrossAnd2Corners(cube, lookup);
+std::vector<Solution> solveCrossAnd2Corners(RubiksCube &cube, Lookup &lookup) {
+    auto solutions = findCrossAnd2Corners(cube, lookup);
 
-    for (auto m : movesCross2Corners) {
-        cube.turn(m);
+    std::array<short, 48> cubeCopy;
+    for (int i = 0; i < 48; i++) {
+        cubeCopy[i] = cube.cube[i];
     }
 
-    int num2 = cube.numCornerSolved();
-    bool crossSolved = cube.solvedWhiteCross();
+    for (auto &solution : solutions) {
+        for (int i = 0; i < 48; i++) {
+            cube.cube[i] = cubeCopy[i];
+        }
 
-    if (num2 < 2) {
-        throw std::runtime_error("Bruh.. 2 corners not solved");
+        for (auto m : solution.crossMoves) {
+            cube.turn(m);
+        }
+
+        int num2 = cube.numCornerSolved();
+        bool crossSolved = cube.solvedWhiteCross();
+
+        if (num2 < 2) {
+            throw std::runtime_error("Bruh.. 2 corners not solved");
+        }
+
+        if (!crossSolved) {
+            throw std::runtime_error("Bruh.. cross not solved");
+        }
     }
 
-    if (!crossSolved) {
-        throw std::runtime_error("Bruh.. cross not solved");
-    }
+    return solutions;
 }
 
 std::vector<Move> findFirstTwoLayers(RubiksCube &cube, Lookup &lookup) {
@@ -349,6 +447,40 @@ void solveFirstTwoLayers(RubiksCube &cube, Lookup &lookup) {
 
     if (!crossSolved) {
         throw std::runtime_error("Bruh.. cross not solved");
+    }
+}
+
+void findAndTestSolutionsFirstTwoLayers(std::array<short, 48> &shuffled, Lookup &lookup, std::vector<Solution> &solutions) {
+
+    for (auto &sol : solutions) {
+
+        RubiksCube cube;
+        for (int i = 0; i < 48; i++) {
+            cube.cube[i] = shuffled[i];
+        }
+
+        for (auto &m : sol.crossMoves) {
+            cube.turn(m);
+        }
+
+        auto hash = cube.hashFirstTwoLayers();
+        auto mapIter = lookup.solveTwoLayer.find(hash);
+
+        std::vector<Move> movesFullLayer;
+        if (mapIter != lookup.solveTwoLayer.end()) {
+            movesFullLayer = convertVectorCharToMove(lookup.solveTwoLayer[hash]);
+        } else {
+            throw std::runtime_error("Had to save two layer table");
+        }
+
+        for (auto m: movesFullLayer) {
+            cube.turn(m);
+            sol.twoLayerMoves.emplace_back(m);
+        }
+
+        cube.raiseCross();
+        cube.raiseTwoCorners();
+        cube.raiseTwoLayer();
     }
 }
 
@@ -426,17 +558,57 @@ bool solveLastLayer(RubiksCube &cube, Lookup &lookup) {
     return inMap;
 }
 
+void findAndTestSolutionsLastLayer(std::array<short, 48> &shuffled, Lookup &lookup, std::vector<Solution> &solutions) {
+
+    for (auto &sol : solutions) {
+
+        RubiksCube cube;
+        for (int i = 0; i < 48; i++) {
+            cube.cube[i] = shuffled[i];
+        }
+
+        for (auto &m : sol.crossMoves) {
+            cube.turn(m);
+        }
+
+        for (auto &m : sol.twoLayerMoves) {
+            cube.turn(m);
+        }
+
+        auto hash = cube.hashFullCube();
+        bool inMap = false;
+        for (int t = 0; t < 4; t++) {
+            cube.turn('P');
+            sol.lastLayerMoves.emplace_back('P');
+            hash = cube.hashFullCube();
+
+            if (lookup.solveLastLayer.find(hash) != lookup.solveLastLayer.end()) {
+                inMap = true;
+                break;
+            }
+        }
+
+        auto restMoves = convertVectorCharToMove(lookup.solveLastLayer[hash]);
+        for (auto &m : restMoves) {
+            sol.lastLayerMoves.emplace_back(m);
+            cube.turn(m);
+        }
+
+        cube.raiseSolved();
+    }
+}
+
 Lookup loadAllMaps() {
     Lookup lookup;
 
     lookup.makeCrossAnd2Corners(7);
     printMapSize(lookup.crossAnd2Corners);
 
-    lookup.makeFirstTwoLayers(7);
-    printMapSize(lookup.firstTwoLayers);
+//    lookup.makeFirstTwoLayers(7);
+//    printMapSize(lookup.firstTwoLayers);
 
-    lookup.makeWholeCube(7);
-    printMapSize(lookup.wholeCube);
+//    lookup.makeWholeCube(7);
+//    printMapSize(lookup.wholeCube);
 
     std::string title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/lastLayer.txt";
     Lookup::load(lookup.solveLastLayer, title);
@@ -526,64 +698,64 @@ void findNumStartHash() {
     }
 }
 
-void testSolver() {
-    auto lookup = loadAllMaps();
-
-    RubiksCube cube;
-    auto shuffleMoves = cube.shuffle(30);
-
-    std::cout << "Shuffle ";
-    printMoves(shuffleMoves);
-
-    auto movesCross2Corners = findCrossAnd2Corners(cube, lookup);
-
-    for (auto m : movesCross2Corners) {
-        cube.turn(m);
-    }
-
-    int num2 = cube.numCornerSolved();
-    bool crossSolved = cube.solvedWhiteCross();
-
-    if (num2 < 2) {
-        throw std::runtime_error("Bruh.. 2 corners not solved");
-    }
-
-    if (!crossSolved) {
-        throw std::runtime_error("Bruh.. cross not solved");
-    }
-
-    std::cout << "Cross and 2 ";
-    printMoves(movesCross2Corners);
-
-    auto hash = cube.hashFirstTwoLayers();
-    auto mapIter = lookup.solveTwoLayer.find(hash);
-
-    std::vector<Move> movesFullLayer;
-    if (mapIter != lookup.solveTwoLayer.end()) {
-        movesFullLayer = convertVectorCharToMove(lookup.solveTwoLayer[hash]);
-    } else {
-        movesFullLayer = findFirstTwoLayers(cube, lookup);
-        lookup.solveTwoLayer[hash] = convertVectorMovesToChar(movesFullLayer);
-    }
-
-    for (auto m : movesFullLayer) {
-        cube.turn(m);
-    }
-
-    int num4 = cube.numCornerSolved();
-    crossSolved = cube.solvedWhiteCross();
-
-    if (num4 != 4) {
-        throw std::runtime_error("Bruh.. 4 corners not solved");
-    }
-
-    if (!crossSolved) {
-        throw std::runtime_error("Bruh.. cross not solved");
-    }
-
-    std::cout << "Two layer ";
-    printMoves(movesFullLayer);
-}
+//void testSolver() {
+//    auto lookup = loadAllMaps();
+//
+//    RubiksCube cube;
+//    auto shuffleMoves = cube.shuffle(30);
+//
+//    std::cout << "Shuffle ";
+//    printMoves(shuffleMoves);
+//
+//    auto movesCross2Corners = findCrossAnd2Corners(cube, lookup);
+//
+//    for (auto m : movesCross2Corners) {
+//        cube.turn(m);
+//    }
+//
+//    int num2 = cube.numCornerSolved();
+//    bool crossSolved = cube.solvedWhiteCross();
+//
+//    if (num2 < 2) {
+//        throw std::runtime_error("Bruh.. 2 corners not solved");
+//    }
+//
+//    if (!crossSolved) {
+//        throw std::runtime_error("Bruh.. cross not solved");
+//    }
+//
+//    std::cout << "Cross and 2 ";
+//    printMoves(movesCross2Corners);
+//
+//    auto hash = cube.hashFirstTwoLayers();
+//    auto mapIter = lookup.solveTwoLayer.find(hash);
+//
+//    std::vector<Move> movesFullLayer;
+//    if (mapIter != lookup.solveTwoLayer.end()) {
+//        movesFullLayer = convertVectorCharToMove(lookup.solveTwoLayer[hash]);
+//    } else {
+//        movesFullLayer = findFirstTwoLayers(cube, lookup);
+//        lookup.solveTwoLayer[hash] = convertVectorMovesToChar(movesFullLayer);
+//    }
+//
+//    for (auto m : movesFullLayer) {
+//        cube.turn(m);
+//    }
+//
+//    int num4 = cube.numCornerSolved();
+//    crossSolved = cube.solvedWhiteCross();
+//
+//    if (num4 != 4) {
+//        throw std::runtime_error("Bruh.. 4 corners not solved");
+//    }
+//
+//    if (!crossSolved) {
+//        throw std::runtime_error("Bruh.. cross not solved");
+//    }
+//
+//    std::cout << "Two layer ";
+//    printMoves(movesFullLayer);
+//}
 
 void testSolveLenght() {
     Lookup lookup;
@@ -605,65 +777,65 @@ void testSolveLenght() {
     int minMoves = 100;
     int maxMoves = 0;
 
-    int numSolves = 100000;
+    int numSolutions = 0;
+
+    int numSolves = 1000;
     std::array<int, 60> solvesForMovelenght = {0};
     for (int i = 0; i < numSolves; i++) {
-        cube.shuffle(50, false, i);
+        std::cout << "Iter: " << i << "\r";
+
+        auto shuffleMoves = cube.shuffle(100, false, i);
+        std::array<short, 48> shuffleCubeCopy;
+        for (int i = 0; i < 48; i++) {
+            shuffleCubeCopy[i] = cube.cube[i];
+        }
 
 
         //////////////// Cross and 2 //////////////
-        auto movesCross2Corners = findCrossAnd2Corners(cube, lookup);
+        auto solutions = findCrossAnd2Corners(cube, lookup);
 
-        for (auto m: movesCross2Corners) {
-            cube.turn(m);
+        for (auto &solution : solutions) {
+            RubiksCube cubeSolutions;
+            for (int i = 0; i < 48; i++) {
+                cubeSolutions.cube[i] = shuffleCubeCopy[i];
+            }
+
+            for (auto &m : solution.crossMoves) {
+                cubeSolutions.turn(m);
+            }
+
+            cubeSolutions.raiseCross();
+            cubeSolutions.raiseTwoCorners();
         }
 
-        ///////////// First two layers //////////////
-        auto hash = cube.hashFirstTwoLayers();
-        auto mapIter = lookup.solveTwoLayer.find(hash);
+        findAndTestSolutionsFirstTwoLayers(shuffleCubeCopy, lookup, solutions);
+        findAndTestSolutionsLastLayer(shuffleCubeCopy, lookup, solutions);
 
-        std::vector<Move> movesFullLayer;
-        if (mapIter != lookup.solveTwoLayer.end()) {
-            movesFullLayer = convertVectorCharToMove(lookup.solveTwoLayer[hash]);
-        } else {
-            throw std::runtime_error("Had to save two layer table");
-        }
+        Solution bestSol;
+        int fewestMoves = 100;
+        for (auto &sol : solutions) {
+            auto bang = bangMoves(sol.crossMoves, sol.twoLayerMoves);
+            auto banged = bangMoves(bang, sol.lastLayerMoves);
 
-        for (auto m: movesFullLayer) {
-            cube.turn(m);
-        }
+            int num = banged.size();
 
-        ///////////// Last Layer //////////////
-        cube.raiseCross();
-        cube.raiseTwoLayer();
-
-        bool inMap = false;
-
-        for (int t = 0; t < 4; t++) {
-            cube.turn('P');
-            hash = cube.hashFullCube();
-
-            if (lookup.solveLastLayer.find(hash) != lookup.solveLastLayer.end()) {
-                inMap = true;
-                break;
+            if (num < fewestMoves) {
+                fewestMoves = num;
+                bestSol = sol;
             }
         }
 
-        std::vector<char> movesWhole;
-        if (inMap) {
-            movesWhole = lookup.solveLastLayer[hash];
+//        printMoves(shuffleMoves);
+//
+//        auto bang = bangMoves(bestSol.crossMoves, bestSol.twoLayerMoves);
+//        auto banged = bangMoves(bang, bestSol.lastLayerMoves);
+//
+//        printMoves(bestSol.crossMoves);
+//        printMoves(bestSol.twoLayerMoves);
+//        printMoves(bestSol.lastLayerMoves);
+//        printMoves(banged);
 
-            for (auto m: movesWhole) {
-                cube.turn(m);
-            }
-
-            cube.raiseSolved();
-        } else {
-            throw std::runtime_error("Had to save last layer");
-        }
-
-        int numMoves = movesCross2Corners.size() + movesFullLayer.size() + movesWhole.size();
-
+        auto numMoves = fewestMoves;
         solvesForMovelenght[numMoves] ++;
         sumMoves += numMoves;
 
@@ -674,9 +846,13 @@ void testSolveLenght() {
         if (numMoves > maxMoves) {
             maxMoves = numMoves;
         }
+
+        numSolutions += solutions.size();
     }
 
     std::cout << "Average moves: " << static_cast<double>(sumMoves) / static_cast<double>(numSolves) << ". Max = " << maxMoves << " | Min = " << minMoves << ".\n";
+
+    std::cout << "Average solutions looked through: " << static_cast<double>(numSolutions) / static_cast<double>(numSolves) << "\n";
 
     std::cout << "Distribution: \n";
 
@@ -686,76 +862,90 @@ void testSolveLenght() {
 
 }
 
+void testTimeFindCrossAnd2() {
+    RubiksCube cube;
+    auto lookup = loadAllMaps();
+
+    std::cout << "Starting.." << "\n";
+    auto start = std::chrono::high_resolution_clock::now();
+
+    //Insert loop here if needed
+    auto solutions = findCrossAnd2Corners(cube, lookup);
+    // Loop
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "Time taken by find-function: " << duration.count() / 1000 << " milliseconds" << std::endl;
+    std::cout << "Num solutions: " << solutions.size() << "\n";
+}
+
 int main() {
+    //testTimeFindCrossAnd2();
     testSolveLenght();
     return 17;
 
     auto lookup = loadAllMaps();
 
-    auto start = std::chrono::high_resolution_clock::now();
-    long long continousInMap = 0;
-    long long prevMax = 0;
-    long long i = 0;
-    while (continousInMap < (1 * 1000 * 1000)) {
 
-        RubiksCube cube;
-
-        auto shuffleMoves = cube.shuffle(30, false, i*48270 + 20000);
-
+    RubiksCube cube;
+    for (long long i = 0; i < 1; i++) {
+        cube.shuffle(50, false, i);
         solveCrossAnd2Corners(cube, lookup);
-        solveFirstTwoLayers(cube, lookup);
-        auto inMap = solveLastLayer(cube, lookup);
 
-        if (inMap) {
-            continousInMap++;
-        } else {
 
-            if (continousInMap > prevMax) {
-                prevMax = continousInMap;
-            }
+        auto hash = cube.hashFirstTwoLayers();
+        auto movesFullLayer = convertVectorCharToMove(lookup.solveTwoLayer[hash]);
 
-            continousInMap = 0;
+        for (auto m : movesFullLayer) {
+            cube.turn(m);
         }
 
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
+        bool inMap = false;
+        for (int t = 0; t < 4; t++) {
+            cube.turn('P');
+            movesFullLayer.emplace_back('P');
+            hash = cube.hashFullCube();
 
-        i++;
-        std::cout << "ix: " << i << ". LL: ";
-        std::cout << lookup.solveLastLayer.size() << ".";
-        std::cout << " TwoL: " << lookup.solveTwoLayer.size() << ". Continous in map: ";
-        std::cout << continousInMap << ". Total time: " << duration << " seconds. Current highest streak: ";
-        std::cout << prevMax << " cubes.\n";
-    }
+            if (lookup.solveLastLayer.find(hash) != lookup.solveLastLayer.end()) {
+                inMap = true;
+                break;
+            }
+        }
 
-    std::cout << "\n\n";
+        auto movesWhole = lookup.solveLastLayer[hash];
+        auto movesLastLayer = convertVectorCharToMove(movesWhole);
 
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
-
-    std::cout << "Found all solutions (probably) in " << duration / 60.0 / 60.0 << " hours.\n";
-    std::cout << "Total size: " << lookup.solveLastLayer.size() << "LL, " << lookup.solveTwoLayer.size() << "TL.\n";
-    std::cout << "Longest inMap streak: " << prevMax << " solves.\n";
-
-    int numTests = 1000;
-    RubiksCube cube;
-    srand(static_cast<unsigned int>(time(nullptr)));
-
-    start = std::chrono::high_resolution_clock::now();
-
-    for (int test = 0; test < numTests; test++) {
-        cube.shuffle(50, false, rand());
-
-        solveCrossAnd2Corners(cube, lookup);
-        solveFirstTwoLayers(cube, lookup);
-        solveLastLayer(cube, lookup);
+        for (auto m : movesWhole) {
+            cube.turn(m);
+        }
 
         cube.raiseSolved();
-    }
 
-    end = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000.0;
-    std::cout << "Solved " << numTests << " cubes in " << duration << " seconds.\n";
-    std::cout << "Avg time: " << static_cast<double>(duration) * 1000.0 / static_cast<double>(numTests) << " ms.";
+        auto banged = bangMoves(movesFullLayer, movesLastLayer);
+
+        printMoves(movesFullLayer);
+        printMoves(movesLastLayer);
+        printMoves(banged);
+
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
