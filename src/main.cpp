@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <ctime>
 
+#include "simpleSerial.hpp"
 #include "solution.hpp"
 #include "RubiksCube.hpp"
 #include "Lookup.hpp"
@@ -880,6 +881,17 @@ void testTimeFindCrossAnd2() {
 }
 
 int main() {
+    RubiksCube cube;
+    auto moves = cube.shuffle(10);
+
+    SimpleSerial serial = SimpleSerial("COM3", 115200);
+    serial.SendMoves(moves);
+
+    return 17;
+
+
+
+
     //testTimeFindCrossAnd2();
     testSolveLenght();
     return 17;
@@ -887,7 +899,7 @@ int main() {
     auto lookup = loadAllMaps();
 
 
-    RubiksCube cube;
+    // RubiksCube cube;
     for (long long i = 0; i < 1; i++) {
         cube.shuffle(50, false, i);
         solveCrossAnd2Corners(cube, lookup);
