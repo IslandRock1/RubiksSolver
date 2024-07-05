@@ -7,12 +7,18 @@ set(SOURCES
         src/main.cpp
         src/RubiksCube.cpp
         src/Lookup.cpp
+        src/solution.cpp
+        src/Move.cpp
+        src/simpleSerial.cpp
 )
 
 # Specify the header files
 set(HEADERS
         include/RubiksCube.hpp
         include/Lookup.hpp
+        include/Move.hpp
+        include/solution.hpp
+        include/simpleSerial.hpp
 )
 
 # Create the executable
