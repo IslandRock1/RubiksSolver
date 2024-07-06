@@ -759,6 +759,51 @@ void findNumStartHash() {
 //    printMoves(movesFullLayer);
 //}
 
+std::vector<Move> solveFullCube(RubiksCube &cube, Lookup &lookup) {
+    std::array<short, 48> shuffleCubeCopy;
+    for (int i = 0; i < 48; i++) {
+        shuffleCubeCopy[i] = cube.cube[i];
+    }
+
+    auto solutions = findCrossAnd2Corners(cube, lookup);
+
+    for (auto &solution : solutions) {
+        RubiksCube cubeSolutions;
+        for (int i = 0; i < 48; i++) {
+            cubeSolutions.cube[i] = shuffleCubeCopy[i];
+        }
+
+        for (auto &m : solution.crossMoves) {
+            cubeSolutions.turn(m);
+        }
+
+        cubeSolutions.raiseCross();
+        cubeSolutions.raiseTwoCorners();
+    }
+
+    findAndTestSolutionsFirstTwoLayers(shuffleCubeCopy, lookup, solutions);
+    findAndTestSolutionsLastLayer(shuffleCubeCopy, lookup, solutions);
+
+    Solution bestSol;
+    std::vector<Move> out;
+    int fewestMoves = 100;
+    for (auto &sol : solutions) {
+        auto bang = bangMoves(sol.crossMoves, sol.twoLayerMoves);
+        auto banged = bangMoves(bang, sol.lastLayerMoves);
+
+        int num = banged.size();
+
+        if (num < fewestMoves) {
+            fewestMoves = num;
+            bestSol = sol;
+
+            out = banged;
+        }
+    }
+
+    return out;
+}
+
 void testSolveLenght() {
     Lookup lookup;
 
@@ -827,16 +872,6 @@ void testSolveLenght() {
             }
         }
 
-//        printMoves(shuffleMoves);
-//
-//        auto bang = bangMoves(bestSol.crossMoves, bestSol.twoLayerMoves);
-//        auto banged = bangMoves(bang, bestSol.lastLayerMoves);
-//
-//        printMoves(bestSol.crossMoves);
-//        printMoves(bestSol.twoLayerMoves);
-//        printMoves(bestSol.lastLayerMoves);
-//        printMoves(banged);
-
         auto numMoves = fewestMoves;
         solvesForMovelenght[numMoves] ++;
         sumMoves += numMoves;
@@ -881,139 +916,40 @@ void testTimeFindCrossAnd2() {
     std::cout << "Num solutions: " << solutions.size() << "\n";
 }
 
-struct Data {
-    bool status;
-    std::string data;
-};
-
 SerialPort *esp32;
-Data sendData(const char *refString) {
-    auto hasWritten = esp32->writeSerialPort(refString, 255);
-
-    Data data;
-    data.data = refString;
-    data.status = hasWritten;
-
-    return data;
-}
-
-Data recieveData() {
-    Data data;
-
-    char recievedData[255];
-    auto hasRead = esp32->readSerialPort(recievedData, 255);
-
-    data.status = hasRead;
-    data.data = recievedData;
-    return data;
-}
-
-bool isSubString(std::string mainString, std::string subString) {
-    auto lMain = mainString.length();
-    auto lSub = subString.length();
-
-    for (int i = 0; i + lSub + 1 < lMain; i++) {
-        // std::cout << i << " | " << l - (subString.length() + 1) << "\n";
-        // std::cout << "I: " << i << " | L: " << lSub << " | sub: " << mainString.substr(i, lSub) << "\n";
-        if (mainString.substr(i, lSub) == subString) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool waitForESPREADY() {
-    while (true) {
-        auto data = recieveData();
-        if (data.status) {
-            std::cout << data.data << "\n";
-            if (isSubString(data.data, "ESPREADY")) {
-                return true;
-            }
-        }
-    }
-}
-
-void handleCom() {
-    RubiksCube cube;
-    auto moves = cube.shuffle(5);
-    auto movesChar = convertVectorMovesToChar(moves);
-
-    movesChar.push_back('S');
-    movesChar.push_back('S');
-    movesChar.push_back('S');
-    movesChar.push_back('\0');
-    std::cout << "Moves: " << movesChar.data() << " | End moves.\n";
-
-    waitForESPREADY();
-    std::cout << "Esp ready\n";
-    sendData(movesChar.data());
-
-    while (true) {
-        waitForESPREADY();
-    }
-}
-
 int main() {
+
+    RubiksCube cube;
+    Lookup lookup;
+    lookup.makeCrossAnd2Corners(7);
+    printMapSize(lookup.crossAnd2Corners);
+
+    std::string title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/lastLayer.txt";
+    Lookup::load(lookup.solveLastLayer, title);
+    printMapSize(lookup.solveLastLayer);
+
+    title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/twoLayer.txt";
+    Lookup::load(lookup.solveTwoLayer, title);
+    printMapSize(lookup.solveTwoLayer);
 
     const char *com_port = "\\\\.\\COM3";
     esp32 = new SerialPort(com_port);
 
     std::cout << "Is connected: " << esp32->isConnected() << "\n";
 
-    handleCom();
+    // Get shuffle moves
+    auto shuffleMoves = esp32->getMoves();
 
-    return 17;
-
-    //testTimeFindCrossAnd2();
-    testSolveLenght();
-    return 17;
-
-    auto lookup = loadAllMaps();
-
-
-    RubiksCube cube;
-    for (long long i = 0; i < 1; i++) {
-        cube.shuffle(50, false, i);
-        solveCrossAnd2Corners(cube, lookup);
-
-
-        auto hash = cube.hashFirstTwoLayers();
-        auto movesFullLayer = convertVectorCharToMove(lookup.solveTwoLayer[hash]);
-
-        for (auto m : movesFullLayer) {
-            cube.turn(m);
-        }
-
-        bool inMap = false;
-        for (int t = 0; t < 4; t++) {
-            cube.turn('P');
-            movesFullLayer.emplace_back('P');
-            hash = cube.hashFullCube();
-
-            if (lookup.solveLastLayer.find(hash) != lookup.solveLastLayer.end()) {
-                inMap = true;
-                break;
-            }
-        }
-
-        auto movesWhole = lookup.solveLastLayer[hash];
-        auto movesLastLayer = convertVectorCharToMove(movesWhole);
-
-        for (auto m : movesWhole) {
-            cube.turn(m);
-        }
-
-        cube.raiseSolved();
-
-        auto banged = bangMoves(movesFullLayer, movesLastLayer);
-
-        printMoves(movesFullLayer);
-        printMoves(movesLastLayer);
-        printMoves(banged);
-
+    // Shuffle cube
+    for (auto m : shuffleMoves) {
+        Move move = Move(m);
+        cube.turn(move);
     }
+
+    auto solvingMoves = solveFullCube(cube, lookup);
+    auto solvingChars = convertVectorMovesToChar(solvingMoves);
+    //Return solving moves
+    esp32->sendMoves(solvingChars);
 }
 
 

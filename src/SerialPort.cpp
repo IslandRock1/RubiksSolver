@@ -126,3 +126,92 @@ void SerialPort::closeSerial()
 {
     CloseHandle(this->handler);
 }
+
+Data SerialPort::recieveData() {
+    Data data;
+
+    char recievedData[255];
+    data.status = this->readSerialPort(recievedData, 255);
+    data.data = recievedData;
+
+    return data;
+}
+
+Data SerialPort::sendData(const char *data) {
+    Data dataStruct;
+    dataStruct.status = this->writeSerialPort(data, 255);
+    dataStruct.data = data;
+
+    return dataStruct;
+}
+
+bool isSubString(std::string mainString, std::string subString) {
+    auto lMain = mainString.length();
+    auto lSub = subString.length();
+
+    for (int i = 0; i + lSub + 1 < lMain; i++) {
+        // std::cout << i << " | " << l - (subString.length() + 1) << "\n";
+        // std::cout << "I: " << i << " | L: " << lSub << " | sub: " << mainString.substr(i, lSub) << "\n";
+        if (mainString.substr(i, lSub) == subString) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+Data SerialPort::waitForMoves() {
+    while (true) {
+        auto data = recieveData();
+
+        if (!data.status) {
+            continue;
+        }
+
+        if (isSubString(data.data, "SSS")) {
+            return data;
+        }
+    }
+}
+
+void removePreAndTrailingS(Data &data) {
+    while (true) {
+        if (data.data[0] == 'S') {
+            data.data.erase(data.data.begin());
+        } else {
+            break;
+        }
+    }
+
+    while (true) {
+        if (data.data[data.data.length() - 1] == 'S') {
+            data.data.erase(data.data.end());
+        } else {
+            break;
+        }
+    }
+}
+
+std::vector<char> SerialPort::getMoves() {
+    auto data = waitForMoves();
+    removePreAndTrailingS(data);
+
+    std::vector<char> out;
+    for (auto &c : data.data) {
+        out.push_back(c);
+    }
+
+    return out;
+}
+
+void SerialPort::sendMoves(std::vector<char> moves) {
+    moves.push_back('S');
+    moves.push_back('S');
+    moves.push_back('S');
+    moves.push_back('\0');
+    std::cout << "Moves: " << moves.data() << " | End moves.\n";
+
+    // waitForEspReady();
+    std::cout << "Esp ready\n";
+    sendData(moves.data());
+}

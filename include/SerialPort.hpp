@@ -12,6 +12,12 @@
 
 #include <windows.h>
 #include <iostream>
+#include <vector>
+
+struct Data {
+    bool status;
+    std::string data;
+};
 
 class SerialPort {
 private:
@@ -19,6 +25,10 @@ private:
     bool connected;
     COMSTAT status;
     DWORD errors;
+
+    Data waitForMoves();
+    Data sendData(const char *data);
+    Data recieveData();
 public:
     explicit SerialPort(const char *portName);
     ~SerialPort();
@@ -27,6 +37,9 @@ public:
     bool writeSerialPort(const char *buffer, unsigned int buf_size);
     bool isConnected();
     void closeSerial();
+
+    std::vector<char> getMoves();
+    void sendMoves(std::vector<char> moves);
 };
 
 
