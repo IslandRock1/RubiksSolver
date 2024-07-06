@@ -175,6 +175,9 @@ Data SerialPort::waitForMoves() {
 }
 
 void removePreAndTrailingS(Data &data) {
+    // This is just stupid.
+    // Make a new list and add only valid chars from data
+
     while (true) {
         if (data.data[0] == 'S') {
             data.data.erase(data.data.begin());
@@ -205,13 +208,15 @@ std::vector<char> SerialPort::getMoves() {
 }
 
 void SerialPort::sendMoves(std::vector<char> moves) {
+    moves.push_back('S'); //ESP is using "SSS" as end terminator
     moves.push_back('S');
     moves.push_back('S');
-    moves.push_back('S');
-    moves.push_back('\0');
-    std::cout << "Moves: " << moves.data() << " | End moves.\n";
+    moves.push_back('\0'); // Null terminator??
 
-    // waitForEspReady();
-    std::cout << "Esp ready\n";
-    sendData(moves.data());
+    std::cout << "Moves: " << moves.data() << " | End moves.\n";
+    auto data = sendData(moves.data());
+
+    if (!data.status) {
+        std::cout << "Failed to send data" << "\n";
+    }
 }
