@@ -924,12 +924,14 @@ int main() {
     lookup.makeCrossAnd2Corners(7);
     printMapSize(lookup.crossAnd2Corners);
 
-    std::string title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/lastLayer.txt";
-    Lookup::load(lookup.solveLastLayer, title);
+    std::string titleDesktop = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/lastLayer.txt";
+    std::string titleLaptop = "C:/Users/oyste/Programering Lokal Laptop/RubiksCubeHashTables/lastLayer.txt";
+    Lookup::load(lookup.solveLastLayer, titleLaptop);
     printMapSize(lookup.solveLastLayer);
 
-    title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/twoLayer.txt";
-    Lookup::load(lookup.solveTwoLayer, title);
+    titleDesktop = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/twoLayer.txt";
+    titleLaptop = "C:/Users/oyste/Programering Lokal Laptop/RubiksCubeHashTables/twoLayer.txt";
+    Lookup::load(lookup.solveTwoLayer, titleLaptop);
     printMapSize(lookup.solveTwoLayer);
 
     const char *com_port = "\\\\.\\COM3";
