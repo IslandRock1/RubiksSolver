@@ -9,7 +9,7 @@ set(SOURCES
         src/Lookup.cpp
         src/solution.cpp
         src/Move.cpp
-        src/simpleSerial.cpp
+        src/SerialPort.cpp
 )
 
 # Specify the header files
@@ -18,7 +18,7 @@ set(HEADERS
         include/Lookup.hpp
         include/Move.hpp
         include/solution.hpp
-        include/simpleSerial.hpp
+        include/SerialPort.hpp
 )
 
 # Create the executable

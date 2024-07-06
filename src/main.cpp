@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <ctime>
 
-#include "simpleSerial.hpp"
+#include "SerialPort.hpp"
 #include "solution.hpp"
 #include "RubiksCube.hpp"
 #include "Lookup.hpp"
@@ -86,6 +86,7 @@ std::vector<char> convertVectorMovesToChar(const std::vector<Move>& moves) {
     std::vector<char> out;
 
     for (auto m : moves) {
+        std::cout << "Converting to: " << m.move << "\n";
         out.push_back(m.move);
     }
 
@@ -880,17 +881,90 @@ void testTimeFindCrossAnd2() {
     std::cout << "Num solutions: " << solutions.size() << "\n";
 }
 
-int main() {
-    RubiksCube cube;
-    auto moves = cube.shuffle(10);
+struct Data {
+    bool status;
+    std::string data;
+};
 
-    SimpleSerial serial = SimpleSerial("COM3", 115200);
-    serial.SendMoves(moves);
+SerialPort *esp32;
+Data sendData(const char *refString) {
+    auto hasWritten = esp32->writeSerialPort(refString, 255);
+
+    Data data;
+    data.data = refString;
+    data.status = hasWritten;
+
+    return data;
+}
+
+Data recieveData() {
+    Data data;
+
+    char recievedData[255];
+    auto hasRead = esp32->readSerialPort(recievedData, 255);
+
+    data.status = hasRead;
+    data.data = recievedData;
+    return data;
+}
+
+bool isSubString(std::string mainString, std::string subString) {
+    auto lMain = mainString.length();
+    auto lSub = subString.length();
+
+    for (int i = 0; i + lSub + 1 < lMain; i++) {
+        // std::cout << i << " | " << l - (subString.length() + 1) << "\n";
+        // std::cout << "I: " << i << " | L: " << lSub << " | sub: " << mainString.substr(i, lSub) << "\n";
+        if (mainString.substr(i, lSub) == subString) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool waitForESPREADY() {
+    while (true) {
+        auto data = recieveData();
+        if (data.status) {
+            std::cout << data.data << "\n";
+            if (isSubString(data.data, "ESPREADY")) {
+                return true;
+            }
+        }
+    }
+}
+
+void handleCom() {
+    RubiksCube cube;
+    auto moves = cube.shuffle(5);
+    auto movesChar = convertVectorMovesToChar(moves);
+
+    movesChar.push_back('S');
+    movesChar.push_back('S');
+    movesChar.push_back('S');
+    movesChar.push_back('\0');
+    std::cout << "Moves: " << movesChar.data() << " | End moves.\n";
+
+    waitForESPREADY();
+    std::cout << "Esp ready\n";
+    sendData(movesChar.data());
+
+    while (true) {
+        waitForESPREADY();
+    }
+}
+
+int main() {
+
+    const char *com_port = "\\\\.\\COM3";
+    esp32 = new SerialPort(com_port);
+
+    std::cout << "Is connected: " << esp32->isConnected() << "\n";
+
+    handleCom();
 
     return 17;
-
-
-
 
     //testTimeFindCrossAnd2();
     testSolveLenght();
@@ -899,7 +973,7 @@ int main() {
     auto lookup = loadAllMaps();
 
 
-    // RubiksCube cube;
+    RubiksCube cube;
     for (long long i = 0; i < 1; i++) {
         cube.shuffle(50, false, i);
         solveCrossAnd2Corners(cube, lookup);
