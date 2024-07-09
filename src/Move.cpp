@@ -2,4 +2,109 @@
 // Created by Øystein Bringsli.
 //
 
+#include "RubiksCube.hpp"
 #include "Move.hpp"
+
+Move::Move(char m): move(m) {
+    constexpr char moves[18] = {
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+            'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'
+    };
+
+    int moveIndex = -1;
+    for (int i = 0; i < 18; ++i) {
+        if (moves[i] == m) {
+            moveIndex = i;
+            break;
+        }
+    }
+
+    if (moveIndex == -1) {
+        std::string error = "Invalid char '";
+        error.push_back(m);
+        error = error + "' for move generation";
+        throw std::runtime_error(error);
+    }
+
+    face = moveIndex / 3;
+    rotations = moveIndex % 3 + 1;
+}
+
+Move::Move(int face, int rotations): face(face), rotations(rotations) {
+    int moveId = face * 3 + rotations - 1;
+
+    constexpr char moves[18] = {
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+            'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'
+    };
+
+    move = moves[moveId];
+}
+
+void insertMove(std::vector<Move> &moves, Move &m) {
+    if (moves.empty()) {
+        moves.emplace_back(m);
+        return;
+    }
+
+    if (moves.back().face == m.face) {
+        moves.back().rotations = (moves.back().rotations + m.rotations) % 4;
+        if (moves.back().rotations == 0) {
+            moves.pop_back();
+        }
+    } else if ((moves.size() > 1) and (moves.back().face == RubiksConst::oppositeFaceAll[m.face]) and (moves.at(moves.size() - 2).face == m.face)) {
+        auto ix = moves.size() - 2;
+        moves.at(ix).rotations = (moves.at(ix).rotations + m.rotations) % 4;
+    } else {
+        moves.emplace_back(m);
+    }
+}
+
+std::vector<Move> Move::combineMoves(std::vector<Move> &firstMoves, std::vector<Move> &secondMoves) {
+    std::vector<Move> outMoves;
+
+    for (auto &m : firstMoves) {
+        insertMove(outMoves, m);
+    }
+
+    for (auto &m : secondMoves) {
+        insertMove(outMoves, m);
+    }
+
+    return outMoves;
+}
+
+std::vector<Move> Move::combineMoves(std::vector<std::vector<Move>> &moves) {
+    std::vector<Move> outMoves;
+
+    for (auto &moveVector : moves) {
+        for (auto &move : moveVector) {
+            insertMove(outMoves, move);
+        }
+    }
+
+    return outMoves;
+}
+
+std::vector<char> Move::convertVectorMoveToChar(const std::vector<Move> &moves) {
+    std::vector<char> out;
+    for (auto &m : moves) {
+        out.push_back(m.move);
+    }
+
+    return out;
+}
+
+std::vector<Move> Move::convertVectorCharToMove(const std::vector<char> &moves) {
+    std::vector<Move> out;
+    for (auto &m : moves) {
+        out.emplace_back(m);
+    }
+
+    return out;
+}
+
+
+
+
+
