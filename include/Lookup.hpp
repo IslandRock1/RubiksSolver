@@ -12,7 +12,7 @@
 #include "RubiksCube.hpp"
 
 struct Position {
-    std::array<short, 10> currPos = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+    std::array<int, 10> currPos = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 };
 
 class Lookup {
@@ -31,9 +31,6 @@ public:
     void makeWholeCube(int depth);
 
     static bool prune(Move &currentMove, Move &prevMove, Move &doublePrevMove);
-
-    static Move charToMove(char move);
-    static char moveToChar(Move move);
 
     static void save(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
     static void load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
