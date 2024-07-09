@@ -8,6 +8,12 @@
 
 #include "RubiksCube.hpp"
 
+std::array<Move, 18> RubiksConst::everyMove = {
+        Move('A'), Move('B'), Move('C'), Move('D'), Move('E'), Move('F'),
+        Move('G'), Move('H'), Move('I'), Move('J'), Move('K'), Move('L'),
+        Move('M'), Move('N'), Move('O'), Move('P'), Move('Q'), Move('R')
+};
+
 unsigned short RubiksCube::convertBase5ToBin(int a, int b, int c) {
     return a * 36 + b * 6 + c;
 }
@@ -218,6 +224,30 @@ std::array<unsigned int, 4> RubiksCube::hashFullCube() {
     }
 
     return vals;
+}
+
+std::array<unsigned int, 4> RubiksCube::getFromHash(Hash hash) {
+    switch (hash) {
+        case TwoCorners:
+        {
+            return hashCrossAnd2Corners();
+        } break;
+
+        case ThreeCorners:
+        {
+            return hashCrossAnd3Corners();
+        } break;
+
+        case FirstTwoLayers:
+        {
+            return hashFirstTwoLayers();
+        } break;
+
+        case WholeCube:
+        {
+            return hashFullCube();
+        } break;
+    }
 }
 
 void RubiksCube::print() {
@@ -450,6 +480,11 @@ void RubiksCube::turn(Move m) {
             turnYellow3();
         } break;
     }
+}
+
+void RubiksCube::turn(char m) {
+    Move move = Move(m);
+    turn(move);
 }
 
 void RubiksCube::turn(int face, int rotations) {

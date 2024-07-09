@@ -10,12 +10,15 @@
 
 #include "Move.hpp"
 
+enum Hash {
+    TwoCorners,
+    ThreeCorners,
+    FirstTwoLayers,
+    WholeCube
+};
+
 namespace RubiksConst {
-    constexpr std::array<Move, 18> everyMove = {
-            Move('A'), Move('B'), Move('C'), Move('D'), Move('E'), Move('F'),
-            Move('G'), Move('H'), Move('I'), Move('J'), Move('K'), Move('L'),
-            Move('M'), Move('N'), Move('O'), Move('P'), Move('Q'), Move('R')
-    };
+    std::array<Move, 18> extern everyMove;
 
     constexpr std::array<int, 3> oppositeFace = {5, 4, 3};
     constexpr std::array<int, 6> oppositeFaceAll = {5, 4, 3, 2, 1, 0};
@@ -77,6 +80,7 @@ public:
 
     std::array<short, 48> cube = {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3};
     void turn(int face, int rotations);
+    void turn(char m);
     void turn(Move m);
 
     void print();
@@ -90,6 +94,7 @@ public:
     std::array<unsigned int, 4> hashCrossAnd2Corners();
     std::array<unsigned int, 4> hashCrossAnd3Corners();
     std::array<unsigned int, 4> hashFullCube();
+    std::array<unsigned int, 4> getFromHash(Hash hash);
 
     inline static unsigned short convertBase5ToBin(int a, int b, int c);
 
