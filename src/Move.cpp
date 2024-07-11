@@ -86,6 +86,16 @@ std::vector<Move> Move::combineMoves(std::vector<std::vector<Move>> &moves) {
     return outMoves;
 }
 
+std::vector<Move> Move::combineMoves(std::vector<Move> &moves) {
+    std::vector<Move> out;
+
+    for (auto &move : moves) {
+        insertMove(out, move);
+    }
+
+    return out;
+}
+
 std::vector<char> Move::convertVectorMoveToChar(const std::vector<Move> &moves) {
     std::vector<char> out;
     for (auto &m : moves) {

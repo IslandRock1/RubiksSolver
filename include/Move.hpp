@@ -25,6 +25,7 @@ public:
 
     static std::vector<Move> combineMoves(std::vector<Move> &firstMoves, std::vector<Move> &secondMoves);
     static std::vector<Move> combineMoves(std::vector<std::vector<Move>> &moves);
+    static std::vector<Move> combineMoves(std::vector<Move> &moves);
 
     static std::vector<char> convertVectorMoveToChar(const std::vector<Move> &moves);
     static std::vector<Move> convertVectorCharToMove(const std::vector<char> &moves);
