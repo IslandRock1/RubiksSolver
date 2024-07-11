@@ -175,24 +175,28 @@ Data SerialPort::waitForMoves() {
 }
 
 void removePreAndTrailingS(Data &data) {
-    // This is just stupid.
-    // Make a new list and add only valid chars from data
-
-    while (true) {
-        if (data.data[0] == 'S') {
-            data.data.erase(data.data.begin());
+    std::string out;
+    bool began = false;
+    int count = 0;
+    for (auto &c : data.data) {
+        if (began) {
+            if (c != 'S') {
+                out.push_back(c);
+                count = 0;
+            } else {
+                count++;
+                if (count == 3) {
+                    break;
+                }
+            }
         } else {
-            break;
+            if (c == 'S') {
+                began = true;
+            }
         }
     }
 
-    while (true) {
-        if (data.data[data.data.length() - 1] == 'S') {
-            data.data.erase(data.data.end());
-        } else {
-            break;
-        }
-    }
+    data.data = out;
 }
 
 std::vector<char> SerialPort::getMoves() {
