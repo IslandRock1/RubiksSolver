@@ -19,6 +19,7 @@ set(HEADERS
         include/Move.hpp
         include/solution.hpp
         include/SerialPort.hpp
+        include/Stopwatch.hpp
 )
 
 # Create the executable
