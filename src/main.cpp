@@ -1,9 +1,11 @@
+
 #include <iostream>
 #include <chrono>
 #include <bitset>
 #include <map>
 #include <stdexcept>
 
+#include "Stopwatch.hpp"
 #include "SerialPort.hpp"
 #include "solution.hpp"
 #include "RubiksCube.hpp"
@@ -419,16 +421,22 @@ void testSolveLenght() {
     Lookup lookup = loadAllMaps();
     RubiksCube cube;
 
+    Stopwatch stopwatch = Stopwatch();
+    std::cout << "Finished initializing." << "\n";
+    long long sumTimeUS = 0;
+
     int sumMoves = 0;
     int minMoves = 100;
     int maxMoves = 0;
 
     int numSolutions = 0;
-
-    int numSolves = 100;
+    int numSolves = 1000;
     std::array<int, 60> solvesForMovelenght = {0};
     for (int i = 0; i < numSolves; i++) {
-        std::cout << "Iter: " << i << "\n";
+
+        auto time = stopwatch.Restart();
+        sumTimeUS += time;
+        std::cout << "Solved " << i << " cubes. This one in " << time / 1000 << " ms.\n";
 
         auto shuffleMoves = cube.shuffle(100, false, i);
         std::array<short, 48> shuffleCubeCopy;
@@ -437,7 +445,7 @@ void testSolveLenght() {
         }
 
         //////////////// Cross and 2 //////////////
-        auto solutions = findCrossAnd2Corners(cube, lookup, 4);
+        auto solutions = findCrossAnd2Corners(cube, lookup, 5);
 
         for (auto &solution : solutions) {
             RubiksCube cubeSolutions;
@@ -489,6 +497,8 @@ void testSolveLenght() {
 
     std::cout << "Average solutions looked through: " << static_cast<double>(numSolutions) / static_cast<double>(numSolves) << "\n";
 
+    std::cout << "Average solving time: " << sumTimeUS / 1000 / numSolves << " ms.\n";
+
     std::cout << "Distribution: \n";
 
     for (auto &num : solvesForMovelenght) {
@@ -498,14 +508,9 @@ void testSolveLenght() {
 
 SerialPort *esp32;
 int main() {
-    testSolveLenght();
-    return 1;
-
     RubiksCube cube;
     Lookup lookup = loadAllMaps();
 
-
-    return 17;
     const char *com_port = "\\\\.\\COM3";
     esp32 = new SerialPort(com_port);
 
