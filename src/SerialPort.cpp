@@ -174,7 +174,7 @@ Data SerialPort::waitForMoves() {
     }
 }
 
-void removePreAndTrailingS(Data &data) {
+bool removePreAndTrailingS(Data &data) {
     std::string out;
     bool began = false;
     int count = 0;
@@ -197,11 +197,20 @@ void removePreAndTrailingS(Data &data) {
     }
 
     data.data = out;
+    return !out.empty();
 }
 
 std::vector<char> SerialPort::getMoves() {
-    auto data = waitForMoves();
-    removePreAndTrailingS(data);
+
+    Data data;
+    while (true) {
+        data = waitForMoves();
+        auto correctFormat = removePreAndTrailingS(data);
+
+        if (correctFormat) {
+            break;
+        }
+    }
 
     std::vector<char> out;
     for (auto &c : data.data) {
