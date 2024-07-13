@@ -285,7 +285,7 @@ Lookup loadAllMaps(bool printInfo = false) {
     auto start = std::chrono::high_resolution_clock::now();
     std::string titleDesktop = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/crossAnd2Corners7D.txt";
     std::string titleLaptop = "C:/Users/oyste/Programering Lokal Laptop/RubiksCubeHashTables/crossAnd2Corners7D.txt";
-    Lookup::load(lookup.crossAnd2Corners, titleDesktop);
+    Lookup::load(lookup.crossAnd2Corners, titleLaptop);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
@@ -296,7 +296,7 @@ Lookup loadAllMaps(bool printInfo = false) {
     start = std::chrono::high_resolution_clock::now();
     titleDesktop = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/twoLayer.txt";
     titleLaptop = "C:/Users/oyste/Programering Lokal Laptop/RubiksCubeHashTables/twoLayer.txt";
-    Lookup::load(lookup.solveTwoLayer, titleDesktop);
+    Lookup::load(lookup.solveTwoLayer, titleLaptop);
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
@@ -307,7 +307,7 @@ Lookup loadAllMaps(bool printInfo = false) {
     start = std::chrono::high_resolution_clock::now();
     titleDesktop = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/lastLayer.txt";
     titleLaptop = "C:/Users/oyste/Programering Lokal Laptop/RubiksCubeHashTables/lastLayer.txt";
-    Lookup::load(lookup.solveLastLayer, titleDesktop);
+    Lookup::load(lookup.solveLastLayer, titleLaptop);
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
@@ -508,18 +508,27 @@ void testSolveLenght() {
 
 SerialPort *esp32;
 int main() {
+    std::cout << "Starting loading.\n";
     RubiksCube cube;
     Lookup lookup = loadAllMaps();
+    // lookup.crossAnd2Corners[cube.hashCrossAnd2Corners()] = {};
 
-    const char *com_port = "\\\\.\\COM3";
+    std::cout << "Finished loading maps\n";
+
+    const char *com_port = "\\\\.\\COM11";
     esp32 = new SerialPort(com_port);
 
-    std::cout << "Is connected: " << esp32->isConnected() << "\n";
+    while (!esp32->isConnected()) {
+
+    }
+
+    std::cout << "Connected to ESP32.";
 
     // Get shuffle moves
     auto shuffleChars = esp32->getMoves();
     auto shuffleMoves = Move::convertVectorCharToMove(shuffleChars);
 
+    std::cout << "Shuffle moves: \n";
     printMoves(shuffleMoves);
 
     // Shuffle cube
@@ -530,9 +539,17 @@ int main() {
     auto solvingMoves = solveFullCube(cube, lookup);
     auto solvingChars = Move::convertVectorMoveToChar(solvingMoves);
 
+    std::cout << "Solving moves: \n";
     printMoves(solvingMoves);
+    Stopwatch watch;
     //Return solving moves
-    esp32->sendMoves(solvingChars);
+    while (true) {
+        esp32->sendMoves(solvingChars);
+
+        while (watch.Stop() < 1000000) {}
+
+        watch.Restart();
+    }
 }
 
 

@@ -134,6 +134,17 @@ Data SerialPort::recieveData() {
     data.status = this->readSerialPort(recievedData, 255);
     data.data = recievedData;
 
+    std::string out;
+    for (auto &val : recievedData) {
+        if (isalnum(val)) {
+            out.push_back(val);
+        }
+    }
+
+    if (!out.empty()) {
+        std::cout << out << "\n";
+    }
+
     return data;
 }
 
@@ -174,24 +185,61 @@ Data SerialPort::waitForMoves() {
     }
 }
 
+bool formatDataAttemptTwo(Data &data) {
+    bool seenS = false;
+    int countS = 0;
+    while (!data.data.empty()) {
+
+        if (seenS and (data.data[0] != 'S') and (countS == 3)) {
+            break;
+        }
+
+        if (data.data[0] == 'S') {
+            seenS = true;
+            countS++;
+        } else {
+            countS = false;
+        }
+
+        data.data.erase(data.data.begin());
+    }
+
+
+    // Should be left with string like ABSDJHDSSSKFHKHBFNSSS
+    std::string out;
+    while ((!data.data.empty()) and (data.data[0] != 'S')) {
+        out.push_back(data.data[0]);
+        data.data.erase(data.data.begin());
+    }
+
+    auto ends = data.data[0] == 'S';
+    data.data = out;
+    return ends;
+}
+
 bool removePreAndTrailingS(Data &data) {
     std::string out;
     bool began = false;
-    int count = 0;
+    int countStart = 0;
+    int countEnd = 0;
     for (auto &c : data.data) {
         if (began) {
             if (c != 'S') {
                 out.push_back(c);
-                count = 0;
+                countEnd = 0;
             } else {
-                count++;
-                if (count == 3) {
+                countEnd++;
+                if (countEnd == 2) {
                     break;
                 }
             }
         } else {
             if (c == 'S') {
-                began = true;
+                countStart++;
+
+                if (countStart == 2) {
+                    began = true;
+                }
             }
         }
     }
@@ -205,7 +253,7 @@ std::vector<char> SerialPort::getMoves() {
     Data data;
     while (true) {
         data = waitForMoves();
-        auto correctFormat = removePreAndTrailingS(data);
+        auto correctFormat = formatDataAttemptTwo(data);
 
         if (correctFormat) {
             break;
@@ -221,13 +269,18 @@ std::vector<char> SerialPort::getMoves() {
 }
 
 void SerialPort::sendMoves(std::vector<char> moves) {
-    moves.push_back('S'); //ESP is using "SSS" as end terminator
-    moves.push_back('S');
-    moves.push_back('S');
-    moves.push_back('\0'); // Null terminator??
+    std::vector<char> chars = {'S', 'S', 'S'};
+    for (auto val : moves) {
+        chars.push_back(val);
+    }
 
-    std::cout << "Moves: " << moves.data() << " | End moves.\n";
-    auto data = sendData(moves.data());
+    chars.push_back('S'); //ESP is using "SSS" as end terminator
+    chars.push_back('S');
+    chars.push_back('S');
+    chars.push_back('\0'); // Null terminator??
+
+    std::cout << "Moves: " << chars.data() << " | End moves.\n";
+    auto data = sendData(chars.data());
 
     if (!data.status) {
         std::cout << "Failed to send data" << "\n";
