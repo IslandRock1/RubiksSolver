@@ -30,7 +30,43 @@ Move::Move(char m): move(m) {
     rotations = moveIndex % 3 + 1;
 }
 
+void Move::updateFaceRot() {
+    constexpr char moves[18] = {
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+            'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'
+    };
+
+    int moveIndex = -1;
+    for (int i = 0; i < 18; ++i) {
+        if (moves[i] == move) {
+            moveIndex = i;
+            break;
+        }
+    }
+
+    if (moveIndex == -1) {
+        std::string error = "Invalid char '";
+        error.push_back(move);
+        error = error + "' for move generation";
+        throw std::runtime_error(error);
+    }
+
+    face = moveIndex / 3;
+    rotations = moveIndex % 3 + 1;
+}
+
 Move::Move(int face, int rotations): face(face), rotations(rotations) {
+    int moveId = face * 3 + rotations - 1;
+
+    constexpr char moves[18] = {
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+            'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'
+    };
+
+    move = moves[moveId];
+}
+
+void Move::updateChar() {
     int moveId = face * 3 + rotations - 1;
 
     constexpr char moves[18] = {
@@ -51,10 +87,13 @@ void insertMove(std::vector<Move> &moves, Move &m) {
         moves.back().rotations = (moves.back().rotations + m.rotations) % 4;
         if (moves.back().rotations == 0) {
             moves.pop_back();
+        } else {
+            moves.back().updateChar();
         }
     } else if ((moves.size() > 1) and (moves.back().face == RubiksConst::oppositeFaceAll[m.face]) and (moves.at(moves.size() - 2).face == m.face)) {
         auto ix = moves.size() - 2;
         moves.at(ix).rotations = (moves.at(ix).rotations + m.rotations) % 4;
+        moves.at(ix).updateChar();
     } else {
         moves.emplace_back(m);
     }

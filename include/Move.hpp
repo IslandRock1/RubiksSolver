@@ -14,6 +14,9 @@ public:
     explicit Move(char m);
     Move(int face, int rotations);
 
+    void updateChar();
+    void updateFaceRot();
+
     char move;
 
     int face;

@@ -23,7 +23,7 @@ std::vector<Move> addMovesWithLookup(const std::vector<Move>& moves, std::vector
     }
 
     for (auto m : lookupMoves) {
-        outMoves.emplace_back(m.face, static_cast<short>(4 - m.rotations));
+        outMoves.emplace_back(m.face, 4 - m.rotations);
     }
 
     return outMoves;
@@ -152,7 +152,7 @@ void printMapSize(const std::map<std::array<unsigned int, 4>, std::vector<char>>
     // std::cout << "Total size of map: " << std::fixed << std::setprecision(2) << totalSizeMB << " MB. Size found in " << duration.count() / 1000 << " milliseconds." << std::endl;
 }
 
-std::vector<Solution> findCrossAnd2Corners(RubiksCube &cube, Lookup &lookup, int depth = 5) {
+std::vector<Solution> findCrossAnd2Corners(RubiksCube &cube, Lookup &lookup, int depth = 3) {
     if ((cube.numCornerSolved() == 2) && cube.solvedWhiteCross()) {return {};}
 
     std::vector<Move> moves;
@@ -162,7 +162,9 @@ std::vector<Solution> findCrossAnd2Corners(RubiksCube &cube, Lookup &lookup, int
     searchMoves(searchConditions, depth);
 
     if (solutions.empty()) {
-        throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
+        std::cout << "Had to increase depth" << "\n";
+        return findCrossAnd2Corners(cube, lookup, depth + 1);
+        // throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
     } else {
         return solutions;
     }
@@ -429,6 +431,46 @@ void testSolveLenght() {
     int minMoves = 100;
     int maxMoves = 0;
 
+    int numSolves = 100;
+    std::array<int, 60> solvesForMovelenght = {0};
+    for (int i = 0; i < numSolves; i++) {
+
+        auto time = stopwatch.Restart();
+        sumTimeUS += time;
+        std::cout << "Solved " << i << " cubes. This one in " << time / 1000 << " ms.\n";
+
+        auto shuffleMoves = cube.shuffle(100, false, i);
+        auto moves = solveFullCube(cube, lookup);
+
+        int numMoves = moves.size();
+
+        sumMoves += numMoves;
+        if (numMoves > maxMoves) {
+            maxMoves = numMoves;
+        } else if (numMoves < minMoves) {
+            minMoves = numMoves;
+        }
+
+
+    }
+
+    std::cout << "Average moves: " << static_cast<double>(sumMoves) / static_cast<double>(numSolves) << ". Max = " << maxMoves << " | Min = " << minMoves << ".\n";
+
+    std::cout << "Average solving time: " << sumTimeUS / 1000 / numSolves << " ms.\n";
+}
+
+void testSolveLenghtDepricated() {
+    Lookup lookup = loadAllMaps();
+    RubiksCube cube;
+
+    Stopwatch stopwatch = Stopwatch();
+    std::cout << "Finished initializing." << "\n";
+    long long sumTimeUS = 0;
+
+    int sumMoves = 0;
+    int minMoves = 100;
+    int maxMoves = 0;
+
     int numSolutions = 0;
     int numSolves = 1000;
     std::array<int, 60> solvesForMovelenght = {0};
@@ -508,6 +550,10 @@ void testSolveLenght() {
 
 SerialPort *esp32;
 int main() {
+
+    testSolveLenght();
+    return 69;
+
     std::cout << "Starting loading.\n";
     RubiksCube cube;
     Lookup lookup = loadAllMaps();
@@ -515,7 +561,7 @@ int main() {
 
     std::cout << "Finished loading maps\n";
 
-    const char *com_port = "\\\\.\\COM11";
+    const char *com_port = "\\\\.\\COM7";
     esp32 = new SerialPort(com_port);
 
     while (!esp32->isConnected()) {
@@ -526,6 +572,7 @@ int main() {
 
     // Get shuffle moves
     auto shuffleChars = esp32->getMoves();
+    // std::vector<char> shuffleChars = {'P', 'A', 'M', 'D', 'P', 'A', 'G', 'D', 'M', 'A', 'P', 'D', 'G', 'J', 'M'};
     auto shuffleMoves = Move::convertVectorCharToMove(shuffleChars);
 
     std::cout << "Shuffle moves: \n";
@@ -537,6 +584,13 @@ int main() {
     }
 
     auto solvingMoves = solveFullCube(cube, lookup);
+
+    std::cout << "Chars of solving moves: \n";
+    for (auto &m : solvingMoves) {
+        std::cout << m.move;
+    }
+    std::cout << "\n";
+
     auto solvingChars = Move::convertVectorMoveToChar(solvingMoves);
 
     std::cout << "Solving moves: \n";

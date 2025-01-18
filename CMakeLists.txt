@@ -12,7 +12,6 @@ set(SOURCES
         src/SerialPort.cpp
 )
 
-# Specify the header files
 set(HEADERS
         include/RubiksCube.hpp
         include/Lookup.hpp
