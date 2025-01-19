@@ -248,6 +248,8 @@ std::array<unsigned int, 4> RubiksCube::getFromHash(Hash hash) {
             return hashFullCube();
         } break;
     }
+
+    throw std::runtime_error("Wrong hash or something. RubiksCube.cpp, getFromHash(Hash)");
 }
 
 void RubiksCube::print() {

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <chrono>
 #include <bitset>
+#include <fstream>
 #include <map>
 #include <stdexcept>
 
@@ -79,77 +80,6 @@ void searchMoves(SearchConditions &searchConditions, int depth) {
         cube.turn(m.face, 4 - m.rotations);
         moves.pop_back();
     }
-}
-
-void printMoves(std::vector<Move> &moves) {
-    std::cout << "Moves: ";
-
-    for (auto m : moves) {
-        switch (m.face) {
-            case 0:
-            {
-                std::cout << "U";
-            } break;
-
-            case 1:
-            {
-                std::cout << "L";
-            } break;
-
-            case 2:
-            {
-                std::cout << "F";
-            } break;
-
-            case 3:
-            {
-                std::cout << "B";
-            } break;
-
-            case 4:
-            {
-                std::cout << "R";
-            } break;
-
-            case 5:
-            {
-                std::cout << "D";
-            } break;
-        }
-
-        std::cout << m.rotations << " ";
-    }
-
-    std::cout << "\n";
-}
-
-void printMapSize(const std::map<std::array<unsigned int, 4>, std::vector<char>>& myMap) {
-    auto start = std::chrono::high_resolution_clock::now();
-    std::size_t totalSize = 0;
-
-    long long totalMoves = 0;
-    long long numEntries = 0;
-
-    for (const auto& entry : myMap) {
-        totalSize += sizeof(entry.first); // Size of the key
-
-        for (const auto move : entry.second) {
-            totalSize += sizeof(move); // Size of each Move object
-            totalMoves++;
-        }
-
-        numEntries++;
-    }
-
-    // Convert total size to megabytes
-    double totalSizeMB = static_cast<double>(totalSize) / 1024.0 / 1024.0;
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-
-    std::cout << "Sum moves: " << totalMoves << " | Avg moves: " << static_cast<double>(totalMoves) / static_cast<double>(numEntries) << " | Num entries: " << numEntries << ". ";
-
-    std::cout << "Size: " << totalSize << " bytes. Size found in " << duration.count() / 1000 << " ms." << "\n";
-    // std::cout << "Total size of map: " << std::fixed << std::setprecision(2) << totalSizeMB << " MB. Size found in " << duration.count() / 1000 << " milliseconds." << std::endl;
 }
 
 std::vector<Solution> findCrossAnd2Corners(RubiksCube &cube, Lookup &lookup, int depth = 3) {
@@ -276,111 +206,92 @@ void findAndTestSolutionsLastLayer(std::array<short, 48> &shuffled, Lookup &look
     }
 }
 
-void printMapInfo(std::map<std::array<unsigned int, 4>, std::vector<char>> &table, long long time) {
-    std::cout << "Loaded map in " << time / 1000000 << " seconds." << "\n";
-    // printMapSize(table);
-}
-
-Lookup loadAllMaps(bool printInfo = false) {
+Lookup loadAllMaps() {
     Lookup lookup;
 
-    auto start = std::chrono::high_resolution_clock::now();
-    std::string titleDesktop = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/crossAnd2Corners7D.txt";
-    std::string titleLaptop = "C:/Users/oyste/Programering Lokal Laptop/RubiksCubeHashTables/crossAnd2Corners7D.txt";
-    Lookup::load(lookup.crossAnd2Corners, titleLaptop);
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::string titleDesktopOld = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables";
+    std::string titleLaptop = "C:/Users/oyste/Programering Lokal Laptop/RubiksCubeHashTables";
+    std::string titleDesktop = "C:/LokalProg/RubiksCubeHashTables";
+    std::string title = titleDesktop;
 
-    if (printInfo) {
-        printMapInfo(lookup.crossAnd2Corners, duration);
-    }
+    std::string crossTitle = title + "/crossAnd2Corners7D.txt";
+    Lookup::load(lookup.crossAnd2Corners, crossTitle);
 
-    start = std::chrono::high_resolution_clock::now();
-    titleDesktop = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/twoLayer.txt";
-    titleLaptop = "C:/Users/oyste/Programering Lokal Laptop/RubiksCubeHashTables/twoLayer.txt";
-    Lookup::load(lookup.solveTwoLayer, titleLaptop);
-    end = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::string twoTitle = title + "/twoLayer.txt";
+    Lookup::load(lookup.solveTwoLayer, twoTitle);
 
-    if (printInfo) {
-        printMapInfo(lookup.solveTwoLayer, duration);
-    }
-
-    start = std::chrono::high_resolution_clock::now();
-    titleDesktop = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/lastLayer.txt";
-    titleLaptop = "C:/Users/oyste/Programering Lokal Laptop/RubiksCubeHashTables/lastLayer.txt";
-    Lookup::load(lookup.solveLastLayer, titleLaptop);
-    end = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-
-    if (printInfo) {
-        printMapInfo(lookup.solveLastLayer, duration);
-    }
+    std::string lastTitle = title + "/lastLayer.txt";
+    Lookup::load(lookup.solveLastLayer, lastTitle);
 
     return lookup;
 }
 
-void findNumStartHash() {
-    std::map<std::array<unsigned int, 4>, bool> map;
+void writeVectorToFile(const std::vector<unsigned long long>& vec, const std::string& filename) {
+    // Open the file in write mode
+    std::ofstream outFile(filename);
 
-    Lookup lookup;
-
-    std::string titleLaptop = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/crossAnd2Corners7D.txt";
-    Lookup::load(lookup.crossAnd2Corners, titleLaptop);
-    std::cout << "Finished loading map" << "\n";
-
-    RubiksCube cube;
-
-    long long iters = 0;
-    long long inMap = 0;
-    long long numEntries = 0;
-    long long mileStone = 100;
-
-    while (true) {
-        cube.shuffle(50, false, iters);
-        std::array<short, 48> backup;
-        for (int i = 0; i < 48; i++) {
-            backup[i] = cube.cube[i];
-        }
-
-        auto solutions = findCrossAnd2Corners(cube, lookup);
-
-        for (auto &solution : solutions) {
-            for (int i = 0; i < 48; i++) {
-                cube.cube[i] = backup[i];
-            }
-
-            for (auto &m : solution.crossMoves) {
-                cube.turn(m);
-            }
-
-            auto hash = cube.hashFullCube();
-            auto mapIter = map.find(hash);
-
-            if (mapIter != map.end()) {
-                inMap++;
-            } else {
-                map[hash] = true;
-                numEntries++;
-            }
-
-            iters++;
-        }
-
-        if (iters > mileStone) {
-            std::cout << "In map vs total iters: " << inMap << "/" << iters << ". Number of entries: " << numEntries << "\n";
-            mileStone = iters + 10000;
-        }
+    // Check if the file opened successfully
+    if (!outFile) {
+        std::cerr << "Error: Could not open the file " << filename << " for writing." << std::endl;
+        return;
     }
+
+    // Write each entry of the vector to the file, one per line
+    for (const auto& value : vec) {
+        outFile << value << std::endl;
+    }
+
+    // Close the file
+    outFile.close();
+
+    std::cout << "Vector contents written to " << filename << " successfully." << std::endl;
+}
+
+void printMapStatistics(const std::map<std::array<unsigned int, 4>, int>& numCubes) {
+
+    static std::vector<unsigned long long> tableSizes;
+    static unsigned long long prevPrintIX = 0;
+
+    // Check if the map is empty
+    if (numCubes.empty()) {
+        std::cout << "The map is empty." << "\n";
+        return;
+    }
+
+    // Calculate the number of elements and the sum of counts
+    unsigned long long totalElements = numCubes.size();
+    unsigned long long totalCount = 0;
+
+    for (const auto& pair : numCubes) {
+        totalCount += pair.second;
+    }
+
+    // Calculate the average count
+    double averageCount = static_cast<double>(totalCount) / static_cast<double>(totalElements);
+
+    // Print the results
+
+    tableSizes.push_back(totalElements);
+
+    if (totalElements > prevPrintIX + 100000) {
+        writeVectorToFile(tableSizes, std::to_string(totalElements) + ".txt");
+        prevPrintIX = totalElements;
+    }
+    std::cout << "Number of elements in the map: " << totalElements << "\n";
+    std::cout << "Average count: " << averageCount << "\n";
 }
 
 std::vector<Move> solveFullCube(RubiksCube &cube, Lookup &lookup) {
+    static std::map<std::array<unsigned int, 4>, int> numCubes;
+    static unsigned long long functionCalls = 0;
+    functionCalls++;
+
     std::array<short, 48> shuffleCubeCopy;
     for (int i = 0; i < 48; i++) {
         shuffleCubeCopy[i] = cube.cube[i];
     }
 
-    auto solutions = findCrossAnd2Corners(cube, lookup);
+    auto solutions = findCrossAnd2Corners(cube, lookup, 4);
 
     for (auto &solution : solutions) {
         RubiksCube cubeSolutions;
@@ -394,7 +305,22 @@ std::vector<Move> solveFullCube(RubiksCube &cube, Lookup &lookup) {
 
         cubeSolutions.raiseCross();
         cubeSolutions.raiseTwoCorners();
+
+        auto hash = cubeSolutions.hashFirstTwoLayers();
+        if (numCubes.find(hash) != numCubes.end()) {
+            // Increment the counter if the value is found
+            numCubes[hash]++;
+        } else {
+            // Set the counter to 1 if the value is not found
+            numCubes[hash] = 1;
+        }
     }
+
+    if (functionCalls % 1000 == 0) {
+        printMapStatistics(numCubes);
+    }
+
+    return {};
 
     findAndTestSolutionsFirstTwoLayers(shuffleCubeCopy, lookup, solutions);
     findAndTestSolutionsLastLayer(shuffleCubeCopy, lookup, solutions);
@@ -420,10 +346,15 @@ std::vector<Move> solveFullCube(RubiksCube &cube, Lookup &lookup) {
 }
 
 void testSolveLenght() {
-    Lookup lookup = loadAllMaps();
-    RubiksCube cube;
 
     Stopwatch stopwatch = Stopwatch();
+    Lookup lookup = loadAllMaps();
+    auto duration = stopwatch.GetElapsedTime();
+    std::cout << "Loaded all maps in " << duration / 1000 << " ms." << "\n";
+
+    RubiksCube cube;
+
+    stopwatch.Restart();
     std::cout << "Finished initializing." << "\n";
     long long sumTimeUS = 0;
 
@@ -431,7 +362,7 @@ void testSolveLenght() {
     int minMoves = 100;
     int maxMoves = 0;
 
-    int numSolves = 100;
+    int numSolves = 1000000;
     std::array<int, 60> solvesForMovelenght = {0};
     for (int i = 0; i < numSolves; i++) {
 
@@ -455,97 +386,7 @@ void testSolveLenght() {
     }
 
     std::cout << "Average moves: " << static_cast<double>(sumMoves) / static_cast<double>(numSolves) << ". Max = " << maxMoves << " | Min = " << minMoves << ".\n";
-
     std::cout << "Average solving time: " << sumTimeUS / 1000 / numSolves << " ms.\n";
-}
-
-void testSolveLenghtDepricated() {
-    Lookup lookup = loadAllMaps();
-    RubiksCube cube;
-
-    Stopwatch stopwatch = Stopwatch();
-    std::cout << "Finished initializing." << "\n";
-    long long sumTimeUS = 0;
-
-    int sumMoves = 0;
-    int minMoves = 100;
-    int maxMoves = 0;
-
-    int numSolutions = 0;
-    int numSolves = 1000;
-    std::array<int, 60> solvesForMovelenght = {0};
-    for (int i = 0; i < numSolves; i++) {
-
-        auto time = stopwatch.Restart();
-        sumTimeUS += time;
-        std::cout << "Solved " << i << " cubes. This one in " << time / 1000 << " ms.\n";
-
-        auto shuffleMoves = cube.shuffle(100, false, i);
-        std::array<short, 48> shuffleCubeCopy;
-        for (int ix = 0; ix < 48; ix++) {
-            shuffleCubeCopy[ix] = cube.cube[ix];
-        }
-
-        //////////////// Cross and 2 //////////////
-        auto solutions = findCrossAnd2Corners(cube, lookup, 5);
-
-        for (auto &solution : solutions) {
-            RubiksCube cubeSolutions;
-            for (int ix = 0; ix < 48; ix++) {
-                cubeSolutions.cube[ix] = shuffleCubeCopy[ix];
-            }
-
-            for (auto &m : solution.crossMoves) {
-                cubeSolutions.turn(m);
-            }
-
-            cubeSolutions.raiseCross();
-            cubeSolutions.raiseTwoCorners();
-        }
-
-        findAndTestSolutionsFirstTwoLayers(shuffleCubeCopy, lookup, solutions);
-        findAndTestSolutionsLastLayer(shuffleCubeCopy, lookup, solutions);
-
-        Solution bestSol;
-        int fewestMoves = 100;
-        for (auto &sol : solutions) {
-            std::vector<std::vector<Move>> allMoves = {sol.crossMoves, sol.twoLayerMoves, sol.lastLayerMoves};
-            auto combinedMoves = Move::combineMoves(allMoves);
-
-            int num = combinedMoves.size();
-
-            if (num < fewestMoves) {
-                fewestMoves = num;
-                bestSol = sol;
-            }
-        }
-
-        auto numMoves = fewestMoves;
-        solvesForMovelenght[numMoves]++;
-        sumMoves += numMoves;
-
-        if (numMoves < minMoves) {
-            minMoves = numMoves;
-        }
-
-        if (numMoves > maxMoves) {
-            maxMoves = numMoves;
-        }
-
-        numSolutions += solutions.size();
-    }
-
-    std::cout << "Average moves: " << static_cast<double>(sumMoves) / static_cast<double>(numSolves) << ". Max = " << maxMoves << " | Min = " << minMoves << ".\n";
-
-    std::cout << "Average solutions looked through: " << static_cast<double>(numSolutions) / static_cast<double>(numSolves) << "\n";
-
-    std::cout << "Average solving time: " << sumTimeUS / 1000 / numSolves << " ms.\n";
-
-    std::cout << "Distribution: \n";
-
-    for (auto &num : solvesForMovelenght) {
-        std::cout << num << "\n";
-    }
 }
 
 SerialPort *esp32;
@@ -576,7 +417,7 @@ int main() {
     auto shuffleMoves = Move::convertVectorCharToMove(shuffleChars);
 
     std::cout << "Shuffle moves: \n";
-    printMoves(shuffleMoves);
+    Move::printMoves(shuffleMoves);
 
     // Shuffle cube
     for (auto m : shuffleMoves) {
@@ -594,13 +435,13 @@ int main() {
     auto solvingChars = Move::convertVectorMoveToChar(solvingMoves);
 
     std::cout << "Solving moves: \n";
-    printMoves(solvingMoves);
+    Move::printMoves(solvingMoves);
     Stopwatch watch;
     //Return solving moves
     while (true) {
         esp32->sendMoves(solvingChars);
 
-        while (watch.Stop() < 1000000) {}
+        while (watch.GetElapsedTime() < 1000000) {}
 
         watch.Restart();
     }

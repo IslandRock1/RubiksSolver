@@ -2,6 +2,7 @@
 // Created by Øystein Bringsli.
 //
 
+#include <iostream>
 #include "RubiksCube.hpp"
 #include "Move.hpp"
 
@@ -153,7 +154,47 @@ std::vector<Move> Move::convertVectorCharToMove(const std::vector<char> &moves) 
     return out;
 }
 
+void Move::printMoves(std::vector<Move> &moves) {
+    std::cout << "Moves: ";
 
+    for (auto m : moves) {
+        switch (m.face) {
+        case 0:
+        {
+            std::cout << "U";
+        } break;
+
+        case 1:
+        {
+            std::cout << "L";
+        } break;
+
+        case 2:
+        {
+            std::cout << "F";
+        } break;
+
+        case 3:
+        {
+            std::cout << "B";
+        } break;
+
+        case 4:
+        {
+            std::cout << "R";
+        } break;
+
+        case 5:
+        {
+            std::cout << "D";
+        } break;
+        }
+
+        std::cout << m.rotations << " ";
+    }
+
+    std::cout << "\n";
+}
 
 
 
