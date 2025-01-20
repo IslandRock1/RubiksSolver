@@ -282,9 +282,6 @@ void printMapStatistics(const std::map<std::array<unsigned int, 4>, int>& numCub
 }
 
 std::vector<Move> solveFullCube(RubiksCube &cube, Lookup &lookup) {
-    static std::map<std::array<unsigned int, 4>, int> numCubes;
-    static unsigned long long functionCalls = 0;
-    functionCalls++;
 
     std::array<short, 48> shuffleCubeCopy;
     for (int i = 0; i < 48; i++) {
@@ -305,22 +302,8 @@ std::vector<Move> solveFullCube(RubiksCube &cube, Lookup &lookup) {
 
         cubeSolutions.raiseCross();
         cubeSolutions.raiseTwoCorners();
-
-        auto hash = cubeSolutions.hashFirstTwoLayers();
-        if (numCubes.find(hash) != numCubes.end()) {
-            // Increment the counter if the value is found
-            numCubes[hash]++;
-        } else {
-            // Set the counter to 1 if the value is not found
-            numCubes[hash] = 1;
-        }
     }
 
-    if (functionCalls % 1000 == 0) {
-        printMapStatistics(numCubes);
-    }
-
-    return {};
 
     findAndTestSolutionsFirstTwoLayers(shuffleCubeCopy, lookup, solutions);
     findAndTestSolutionsLastLayer(shuffleCubeCopy, lookup, solutions);
@@ -391,9 +374,6 @@ void testSolveLenght() {
 
 SerialPort *esp32;
 int main() {
-
-    testSolveLenght();
-    return 69;
 
     std::cout << "Starting loading.\n";
     RubiksCube cube;
