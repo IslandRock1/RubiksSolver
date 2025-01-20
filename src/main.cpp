@@ -100,7 +100,7 @@ std::vector<Solution> findCrossAnd2Corners(RubiksCube &cube, Lookup &lookup, int
     }
 }
 
-std::vector<Solution> solveCrossAnd2Corners(RubiksCube &cube, Lookup &lookup) {
+std::vector<Solution> solveCrossAnd2CornersDepricated(RubiksCube &cube, Lookup &lookup) {
     auto solutions = findCrossAnd2Corners(cube, lookup);
 
     std::array<short, 48> cubeCopy;
@@ -224,61 +224,6 @@ Lookup loadAllMaps() {
     Lookup::load(lookup.solveLastLayer, lastTitle);
 
     return lookup;
-}
-
-void writeVectorToFile(const std::vector<unsigned long long>& vec, const std::string& filename) {
-    // Open the file in write mode
-    std::ofstream outFile(filename);
-
-    // Check if the file opened successfully
-    if (!outFile) {
-        std::cerr << "Error: Could not open the file " << filename << " for writing." << std::endl;
-        return;
-    }
-
-    // Write each entry of the vector to the file, one per line
-    for (const auto& value : vec) {
-        outFile << value << std::endl;
-    }
-
-    // Close the file
-    outFile.close();
-
-    std::cout << "Vector contents written to " << filename << " successfully." << std::endl;
-}
-
-void printMapStatistics(const std::map<std::array<unsigned int, 4>, int>& numCubes) {
-
-    static std::vector<unsigned long long> tableSizes;
-    static unsigned long long prevPrintIX = 0;
-
-    // Check if the map is empty
-    if (numCubes.empty()) {
-        std::cout << "The map is empty." << "\n";
-        return;
-    }
-
-    // Calculate the number of elements and the sum of counts
-    unsigned long long totalElements = numCubes.size();
-    unsigned long long totalCount = 0;
-
-    for (const auto& pair : numCubes) {
-        totalCount += pair.second;
-    }
-
-    // Calculate the average count
-    double averageCount = static_cast<double>(totalCount) / static_cast<double>(totalElements);
-
-    // Print the results
-
-    tableSizes.push_back(totalElements);
-
-    if (totalElements > prevPrintIX + 100000) {
-        writeVectorToFile(tableSizes, std::to_string(totalElements) + ".txt");
-        prevPrintIX = totalElements;
-    }
-    std::cout << "Number of elements in the map: " << totalElements << "\n";
-    std::cout << "Average count: " << averageCount << "\n";
 }
 
 std::vector<Move> solveFullCube(RubiksCube &cube, Lookup &lookup) {
