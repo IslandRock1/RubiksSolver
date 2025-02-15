@@ -7,12 +7,8 @@
 #include <stdexcept>
 #include <thread>
 
-#include <IXWebSocket.h>
-#include <IXNetSystem.h>
-#include <IXUserAgent.h>
-
+#include "Camera.hpp"
 #include "Stopwatch.hpp"
-#include "SerialPortOld.hpp"
 #include "SerialPort.hpp"
 #include "solution.hpp"
 #include "RubiksCube.hpp"
@@ -323,7 +319,7 @@ void testSolveLenght() {
     std::cout << "Average solving time: " << sumTimeUS / 1000 / numSolves << " ms.\n";
 }
 
-SerialPortOld *esp32Old;
+SerialPort *esp32;
 void oldSolving() {
     std::cout << "Starting loading.\n";
     RubiksCube cube;
@@ -333,16 +329,16 @@ void oldSolving() {
     std::cout << "Finished loading maps\n";
 
     const char *com_port = "\\\\.\\COM7";
-    esp32Old = new SerialPortOld(com_port);
+    esp32 = new SerialPort(com_port);
 
-    while (!esp32Old->isConnected()) {
+    while (!esp32->isConnected()) {
 
     }
 
     std::cout << "Connected to ESP32.";
 
     // Get shuffle moves
-    auto shuffleChars = esp32Old->getMoves();
+    auto shuffleChars = esp32->getMoves();
     // std::vector<char> shuffleChars = {'P', 'A', 'M', 'D', 'P', 'A', 'G', 'D', 'M', 'A', 'P', 'D', 'G', 'J', 'M'};
     auto shuffleMoves = Move::convertVectorCharToMove(shuffleChars);
 
@@ -369,7 +365,7 @@ void oldSolving() {
     Stopwatch watch;
     //Return solving moves
     while (true) {
-        esp32Old->sendMoves(solvingChars);
+        esp32->sendMoves(solvingChars);
 
         while (watch.GetElapsedTime() < 1000000) {}
 
@@ -377,63 +373,19 @@ void oldSolving() {
     }
 }
 
-
-
 int main() {
+    Camera cam0 = Camera(0);
+    Camera cam1 = Camera(1);
 
-    ix::initNetSystem();
-
-    // Our websocket object
-    ix::WebSocket webSocket;
-
-    // Connect to a server with encryption
-    // See https://machinezone.github.io/IXWebSocket/usage/#tls-support-and-configuration
-    //     https://github.com/machinezone/IXWebSocket/issues/386#issuecomment-1105235227 (self signed certificates)
-    std::string url("wss://echo.websocket.org");
-    webSocket.setUrl(url);
-
-    std::cout << "Connecting to " << url << "..." << std::endl;
-
-    // Setup a callback to be fired (in a background thread, watch out for race conditions !)
-    // when a message or an event (open, close, error) is received
-    webSocket.setOnMessageCallback([](const ix::WebSocketMessagePtr& msg)
-                                   {
-                                       if (msg->type == ix::WebSocketMessageType::Message)
-                                       {
-                                           std::cout << "received message: " << msg->str << std::endl;
-                                           std::cout << "> " << std::flush;
-                                       }
-                                       else if (msg->type == ix::WebSocketMessageType::Open)
-                                       {
-                                           std::cout << "Connection established" << std::endl;
-                                           std::cout << "> " << std::flush;
-                                       }
-                                       else if (msg->type == ix::WebSocketMessageType::Error)
-                                       {
-                                           // Maybe SSL is not configured properly
-                                           std::cout << "Connection error: " << msg->errorInfo.reason << std::endl;
-                                           std::cout << "> " << std::flush;
-                                       }
-                                   }
-    );
-
-    // Now that our callback is setup, we can start our background thread and receive messages
-    webSocket.start();
-
-    // Send a message to the server (default to TEXT mode)
-    webSocket.send("hello world");
-
-    // Display a prompt
-    std::cout << "> " << std::flush;
-
-    std::string text;
-    // Read text from the console and send messages in text mode.
-    // Exit with Ctrl-D on Unix or Ctrl-Z on Windows.
-    while (std::getline(std::cin, text))
-    {
-        webSocket.send(text);
-        std::cout << "> " << std::flush;
+    if (!cam0.isOpened()) {
+        return -69;
     }
 
-    return 0;
+    if (!cam1.isOpened()) {
+        return -692;
+    }
+
+    for (int i = 0; i < 60 * 10; i++) {
+        cam0.showFeed();
+    }
 }

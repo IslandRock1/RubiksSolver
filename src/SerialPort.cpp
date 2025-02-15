@@ -1,217 +1,294 @@
 //
-// Created by Øystein Bringsli.
-//
+// Stolen directly from github
+// https://github.com/manashmandal/SerialPort.git
 
 #include "SerialPort.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
-#include <string.h>
-#include <chrono>
-#include <thread>
-#include <time.h>
-#include <fstream>
-
-SimpleSerial::SimpleSerial(const std::string &com_port, DWORD COM_BAUD_RATE)
+SerialPort::SerialPort(const char *portName)
 {
-    this->init(com_port, COM_BAUD_RATE);
-}
+    this->connected = false;
 
-SimpleSerial::~SimpleSerial()
-{
-    if (connected_)
-    {
-        connected_ = false;
-        CloseHandle(io_handler_);
-    }
-}
-
-void SimpleSerial::init(const std::string &com_port, DWORD COM_BAUD_RATE)
-{
-    if (connected_ == true)
-    {
-        std::cout << "Warning: could not initialize COM port already in use\n";
-        return;
-    }
-
-    io_handler_ = CreateFileA(com_port.c_str(),
-                              GENERIC_READ | GENERIC_WRITE,
-                              0,
-                              nullptr,
-                              OPEN_EXISTING,
-                              FILE_ATTRIBUTE_NORMAL,
-                              nullptr);
-
-    if (io_handler_ == INVALID_HANDLE_VALUE)
+    this->handler = CreateFileA(static_cast<LPCSTR>(portName),
+                                GENERIC_READ | GENERIC_WRITE,
+                                0,
+                                NULL,
+                                OPEN_EXISTING,
+                                FILE_ATTRIBUTE_NORMAL,
+                                NULL);
+    if (this->handler == INVALID_HANDLE_VALUE)
     {
         if (GetLastError() == ERROR_FILE_NOT_FOUND)
         {
-            std::cout << "Warning: Handle was not attached. Reason: " << com_port << " not available\n";
-        }
-    }
-    else
-    {
-        DCB dcbSerialParams = {0};
-
-        if (!GetCommState(io_handler_, &dcbSerialParams))
-        {
-            std::cout << "Warning: Failed to get current serial params\n";
+            std::cerr << "ERROR: Handle was not attached.Reason : " << portName << " not available\n";
         }
         else
         {
-            dcbSerialParams.BaudRate = COM_BAUD_RATE;
-            dcbSerialParams.ByteSize = 8;
-            dcbSerialParams.StopBits = ONESTOPBIT;
-            dcbSerialParams.Parity = NOPARITY;
-            dcbSerialParams.fDtrControl = DTR_CONTROL_ENABLE;
-
-            if (!SetCommState(io_handler_, &dcbSerialParams))
-            {
-                std::cout << "Warning: could not set serial port params\n";
-            }
-            else
-            {
-                connected_ = true;
-                PurgeComm(io_handler_, PURGE_RXCLEAR | PURGE_TXCLEAR);
-            }
-        }
-    }
-}
-
-void SimpleSerial::CustomSyntax(const std::string& syntax_type)
-{
-    std::ifstream syntaxfile_exist("syntax_config.txt");
-
-    if (!syntaxfile_exist)
-    {
-        std::ofstream syntaxfile;
-        syntaxfile.open("syntax_config.txt");
-
-        if (syntaxfile)
-        {
-            syntaxfile << "json { }\n";
-            syntaxfile << "greater_less_than < >\n";
-            syntaxfile.close();
-        }
-    }
-
-    syntaxfile_exist.close();
-
-    std::ifstream syntaxfile_in;
-    syntaxfile_in.open("syntax_config.txt");
-
-    std::string line;
-    bool found = false;
-
-    if (syntaxfile_in.is_open())
-    {
-        while (syntaxfile_in)
-        {
-            syntaxfile_in >> syntax_name_ >> front_delimiter_ >> end_delimiter_;
-            getline(syntaxfile_in, line);
-
-            if (syntax_name_ == syntax_type)
-            {
-                found = true;
-                break;
-            }
-        }
-
-        syntaxfile_in.close();
-
-        if (!found)
-        {
-            syntax_name_ = "";
-            front_delimiter_ = ' ';
-            end_delimiter_ = ' ';
-            std::cout << "Warning: Could not find delimiters, may cause problems!\n";
+            std::cerr << "ERROR!!!\n";
         }
     }
     else
     {
-        std::cout << "Warning: No file open\n";
+        DCB dcbSerialParameters = {0};
+
+        if (!GetCommState(this->handler, &dcbSerialParameters))
+        {
+            std::cerr << "Failed to get current serial parameters\n";
+        }
+        else
+        {
+            dcbSerialParameters.BaudRate = CBR_115200;
+            dcbSerialParameters.ByteSize = 8;
+            dcbSerialParameters.StopBits = ONESTOPBIT;
+            dcbSerialParameters.Parity = NOPARITY;
+            dcbSerialParameters.fDtrControl = DTR_CONTROL_ENABLE;
+
+            if (!SetCommState(handler, &dcbSerialParameters))
+            {
+                std::cout << "ALERT: could not set serial port parameters\n";
+            }
+            else
+            {
+                this->connected = true;
+                PurgeComm(this->handler, PURGE_RXCLEAR | PURGE_TXCLEAR);
+                Sleep(ARDUINO_WAIT_TIME);
+            }
+        }
     }
 }
 
-std::string SimpleSerial::ReadSerialPort(int reply_wait_time, const std::string& syntax_type)
+SerialPort::~SerialPort()
 {
-    DWORD bytes_read;
-    char inc_msg[1];
-    std::string complete_inc_msg;
-    bool began = false;
-
-    CustomSyntax(syntax_type);
-
-    time_t start_time = time(nullptr);
-
-    ClearCommError(io_handler_, &errors_, &status_);
-
-    while ((time(nullptr) - start_time) < reply_wait_time)
+    if (this->connected)
     {
-        std::cout << "Wait 0" << "\n";
-        if (status_.cbInQue > 0)
+        this->connected = false;
+        CloseHandle(this->handler);
+    }
+}
+
+// Reading bytes from serial port to buffer;
+// returns read bytes count, or if error occurs, returns 0
+int SerialPort::readSerialPort(const char *buffer, unsigned int buf_size)
+{
+    DWORD bytesRead{};
+    unsigned int toRead = 0;
+
+    ClearCommError(this->handler, &this->errors, &this->status);
+
+    if (this->status.cbInQue > 0)
+    {
+        if (this->status.cbInQue > buf_size)
         {
-            std::cout << "Wait 1" << "\n";
-            if (ReadFile(io_handler_, inc_msg, 1, &bytes_read, nullptr))
-            {
-                std::cout << "Wait 2" << "\n";
-                if (inc_msg[0] == front_delimiter_ || began)
-                {
-                    began = true;
+            toRead = buf_size;
+        }
+        else
+        {
+            toRead = this->status.cbInQue;
+        }
+    }
 
-                    if (inc_msg[0] == end_delimiter_)
-                    {
-                        return complete_inc_msg;
-                    }
+    memset((void*) buffer, 0, buf_size);
 
-                    if (inc_msg[0] != front_delimiter_)
-                    {
-                        complete_inc_msg.append(inc_msg, 1);
-                    }
+    if (ReadFile(this->handler, (void*) buffer, toRead, &bytesRead, NULL))
+    {
+        return bytesRead;
+    }
+
+    return 0;
+}
+
+// Sending provided buffer to serial port;
+// returns true if succeed, false if not
+bool SerialPort::writeSerialPort(const char *buffer, unsigned int buf_size)
+{
+    DWORD bytesSend;
+
+    if (!WriteFile(this->handler, (void*) buffer, buf_size, &bytesSend, 0))
+    {
+        ClearCommError(this->handler, &this->errors, &this->status);
+        return false;
+    }
+
+    return true;
+}
+
+// Checking if serial port is connected
+bool SerialPort::isConnected()
+{
+    if (!ClearCommError(this->handler, &this->errors, &this->status))
+    {
+        this->connected = false;
+    }
+
+    return this->connected;
+}
+
+void SerialPort::closeSerial()
+{
+    CloseHandle(this->handler);
+}
+
+Data SerialPort::recieveData() {
+    Data data;
+
+    char recievedData[255];
+    data.status = this->readSerialPort(recievedData, 255);
+    data.data = recievedData;
+
+    std::string out;
+    for (auto &val : recievedData) {
+        if (isalnum(val)) {
+            out.push_back(val);
+        }
+    }
+
+    if (!out.empty()) {
+        // std::cout << out << "\n";
+    }
+
+    return data;
+}
+
+Data SerialPort::sendData(const char *data) {
+    Data dataStruct;
+    dataStruct.status = this->writeSerialPort(data, 255);
+    dataStruct.data = data;
+
+    return dataStruct;
+}
+
+bool isSubString(std::string mainString, std::string subString) {
+    auto lMain = mainString.length();
+    auto lSub = subString.length();
+
+    for (int i = 0; i + lSub + 1 < lMain; i++) {
+        // std::cout << i << " | " << l - (subString.length() + 1) << "\n";
+        // std::cout << "I: " << i << " | L: " << lSub << " | sub: " << mainString.substr(i, lSub) << "\n";
+        if (mainString.substr(i, lSub) == subString) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+Data SerialPort::waitForMoves() {
+    while (true) {
+        auto data = recieveData();
+
+        if (!data.status) {
+            continue;
+        }
+
+        if (data.data.empty()) {
+            continue;
+        }
+
+        return data;
+
+        if (isSubString(data.data, "SSS")) {
+            return data;
+        }
+    }
+}
+
+bool formatDataAttemptTwo(Data &data) {
+    bool seenS = false;
+    int countS = 0;
+    while (!data.data.empty()) {
+
+        if (seenS and (data.data[0] != 'S') and (countS == 3)) {
+            break;
+        }
+
+        if (data.data[0] == 'S') {
+            seenS = true;
+            countS++;
+        } else {
+            countS = false;
+        }
+
+        data.data.erase(data.data.begin());
+    }
+
+
+    // Should be left with string like ABSDJHDSSSKFHKHBFNSSS
+    std::string out;
+    while ((!data.data.empty()) and (data.data[0] != 'S')) {
+        out.push_back(data.data[0]);
+        data.data.erase(data.data.begin());
+    }
+
+    auto ends = data.data[0] == 'S';
+    data.data = out;
+    return ends;
+}
+
+bool removePreAndTrailingS(Data &data) {
+    std::string out;
+    bool began = false;
+    int countStart = 0;
+    int countEnd = 0;
+    for (auto &c : data.data) {
+        if (began) {
+            if (c != 'S') {
+                out.push_back(c);
+                countEnd = 0;
+            } else {
+                countEnd++;
+                if (countEnd == 2) {
+                    break;
                 }
             }
-            else
-            {
-                return "Warning: Failed to receive data.\n";
+        } else {
+            if (c == 'S') {
+                countStart++;
+
+                if (countStart == 2) {
+                    began = true;
+                }
             }
         }
     }
-    return complete_inc_msg;
+
+    data.data = out;
+    return !out.empty();
 }
 
-bool SimpleSerial::WriteSerialPort(const std::string &data_sent)
-{
-    DWORD bytes_sent;
+std::vector<char> SerialPort::getMoves() {
 
-    unsigned int data_sent_length = static_cast<unsigned int>(data_sent.length());
+    Data data;
+    while (true) {
+        data = waitForMoves();
+        auto correctFormat = formatDataAttemptTwo(data);
 
-    if (!WriteFile(io_handler_, data_sent.c_str(), data_sent_length, &bytes_sent, nullptr))
-    {
-        ClearCommError(io_handler_, &errors_, &status_);
-        return false;
+        if (correctFormat) {
+            break;
+        }
     }
-    else
-    {
-        return true;
+
+    std::vector<char> out;
+    for (auto &c : data.data) {
+        out.push_back(c);
     }
+
+    return out;
 }
 
-bool SimpleSerial::CloseSerialPort()
-{
-    if (connected_)
-    {
-        connected_ = false;
-        CloseHandle(io_handler_);
-        return true;
+void SerialPort::sendMoves(std::vector<char> moves) {
+    std::vector<char> chars = {'S', 'S', 'S'};
+    for (auto val : moves) {
+        chars.push_back(val);
     }
-    else
-    {
-        return false;
-    }
-}
 
-bool SimpleSerial::IsConnected() const
-{
-    return this->connected_;
+    chars.push_back('S'); //ESP is using "SSS" as end terminator
+    chars.push_back('S');
+    chars.push_back('S');
+    chars.push_back('\0'); // Null terminator??
+
+    // std::cout << "Moves: " << chars.data() << " | End moves.\n";
+    auto data = sendData(chars.data());
+
+    if (!data.status) {
+        std::cout << "Failed to send data" << "\n";
+    }
 }
