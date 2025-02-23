@@ -35,6 +35,8 @@ public:
 
     static void save(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
     static void load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
+
+    static Lookup loadAllMaps();
 };
 
 

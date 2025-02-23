@@ -377,3 +377,23 @@ void Lookup::load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map,
 
     file.close();
 }
+
+Lookup Lookup::loadAllMaps() {
+    Lookup lookup;
+
+    std::string titleDesktopOld = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables";
+    std::string titleLaptop = "C:/Users/oyste/Programering Lokal Laptop/RubiksCubeHashTables";
+    std::string titleDesktop = "C:/LokalProg/RubiksCubeHashTables";
+    std::string title = titleDesktop;
+
+    std::string crossTitle = title + "/crossAnd2Corners7D.txt";
+    load(lookup.crossAnd2Corners, crossTitle);
+
+    std::string twoTitle = title + "/twoLayer.txt";
+    load(lookup.solveTwoLayer, twoTitle);
+
+    std::string lastTitle = title + "/lastLayer.txt";
+    load(lookup.solveLastLayer, lastTitle);
+
+    return lookup;
+}

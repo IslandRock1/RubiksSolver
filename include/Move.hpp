@@ -26,6 +26,7 @@ public:
         return (move == other.move);
     }
 
+    static std::vector<Move> combineMovesWithLookupMoves(const std::vector<Move>& moves, std::vector<Move> lookupMoves, bool reverse = true);
     static std::vector<Move> combineMoves(std::vector<Move> &firstMoves, std::vector<Move> &secondMoves);
     static std::vector<Move> combineMoves(std::vector<std::vector<Move>> &moves);
     static std::vector<Move> combineMoves(std::vector<Move> &moves);

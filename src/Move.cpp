@@ -100,6 +100,25 @@ void insertMove(std::vector<Move> &moves, Move &m) {
     }
 }
 
+std::vector<Move> Move::combineMovesWithLookupMoves(const std::vector<Move>& moves, std::vector<Move> lookupMoves, bool reverse) {
+    std::vector<Move> outMoves;
+
+    for (auto m : moves) {
+        outMoves.emplace_back(m);
+    }
+
+    if (reverse) {
+        std::reverse(lookupMoves.begin(), lookupMoves.end());
+    }
+
+    for (auto m : lookupMoves) {
+        outMoves.emplace_back(m.face, 4 - m.rotations);
+    }
+
+    return outMoves;
+}
+
+
 std::vector<Move> Move::combineMoves(std::vector<Move> &firstMoves, std::vector<Move> &secondMoves) {
     std::vector<Move> outMoves;
 

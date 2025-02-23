@@ -2,18 +2,15 @@ cmake_minimum_required(VERSION 3.26)
 project(RubiksSolver)
 set(CMAKE_CXX_STANDARD 20)
 
-set(OpenCV_DIR C:/opencv/build)
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
+set(pybind11_DIR C:/Users/oyste/AppData/Local/Programs/Python/Python312/Lib/site-packages/pybind11/share/cmake/pybind11)
+find_package(Python REQUIRED COMPONENTS Interpreter Development)
+find_package(pybind11 REQUIRED)
 
-set(SOURCES
-        src/main.cpp
+set(SHARED_SOURCES
         src/RubiksCube.cpp
         src/Lookup.cpp
-        src/solution.cpp
         src/Move.cpp
-        src/SerialPort.cpp
-        src/Camera.cpp
+        src/Solver.cpp
 )
 
 set(HEADERS
@@ -21,12 +18,16 @@ set(HEADERS
         include/Lookup.hpp
         include/Move.hpp
         include/solution.hpp
-        include/SerialPort.hpp
         include/Stopwatch.hpp
-        include/Camera.hpp
+        include/Solver.hpp
 )
 
-# Create the executable
-add_executable(RubiksSolver ${SOURCES} ${HEADERS})
+# Build exe
+add_executable(RubiksSolverExe src/main.cpp ${SHARED_SOURCES})
+target_include_directories(RubiksSolverExe PRIVATE include)
+
+# Build python module
+add_library(RubiksSolver MODULE ${SHARED_SOURCES} src/RubiksSolver.cpp)  # Add pybind source file
 target_include_directories(RubiksSolver PRIVATE include)
-target_link_libraries(RubiksSolver ${OpenCV_LIBS})
+target_link_libraries(RubiksSolver PRIVATE pybind11::module Python::Python)
+set_target_properties(RubiksSolver PROPERTIES SUFFIX ".pyd")
