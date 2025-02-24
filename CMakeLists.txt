@@ -39,3 +39,8 @@ add_library(RubiksSolver MODULE ${SHARED_SOURCES} src/RubiksSolver.cpp)  # Add p
 target_include_directories(RubiksSolver PRIVATE include)
 target_link_libraries(RubiksSolver PRIVATE pybind11::module Python::Python)
 set_target_properties(RubiksSolver PROPERTIES SUFFIX ".pyd")
+
+add_library(RubiksCubeWrapper MODULE ${SHARED_SOURCES} src/RubiksCubeWrapper.cpp)  # Add pybind source file
+target_include_directories(RubiksCubeWrapper PRIVATE include)
+target_link_libraries(RubiksCubeWrapper PRIVATE pybind11::module Python::Python)
+set_target_properties(RubiksCubeWrapper PROPERTIES SUFFIX ".pyd")
