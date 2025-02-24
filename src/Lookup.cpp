@@ -384,7 +384,7 @@ Lookup Lookup::loadAllMaps() {
     std::string titleDesktopOld = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables";
     std::string titleLaptop = "C:/Users/oyste/Programering Lokal Laptop/RubiksCubeHashTables";
     std::string titleDesktop = "C:/LokalProg/RubiksCubeHashTables";
-    std::string title = titleDesktop;
+    std::string title = titleLaptop;
 
     std::string crossTitle = title + "/crossAnd2Corners7D.txt";
     load(lookup.crossAnd2Corners, crossTitle);
