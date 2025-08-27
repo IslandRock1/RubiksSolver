@@ -9,6 +9,8 @@
 #include "Move.hpp"
 #include "Lookup.hpp"
 
+#include <ranges>
+
 bool Lookup::prune(Move &currentMove, Move &prevMove, Move &doublePrevMove) {
     if (currentMove.face == prevMove.face) { return true;}
 
@@ -378,13 +380,107 @@ void Lookup::load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map,
     file.close();
 }
 
+size_t Lookup::getSize(std::map<std::array<unsigned int, 4>, std::vector<char>>& map) {
+    size_t total = 0;
+    constexpr size_t mapNodeOverhead = 40; // STL-dependent, this is an approximation
+    unsigned long long numEntries = 0;
+
+    size_t sizeKey = 0;
+    size_t sizeValue = 0;
+
+    for (const auto& [key, vec] : map) {
+        total += mapNodeOverhead;
+        total += sizeof(key);
+        total += sizeof(vec);
+        total += vec.capacity(); // each char is 1 byte
+
+        numEntries += 1;
+
+        sizeKey += sizeof(key);
+        sizeValue += sizeof(vec);
+        sizeValue += vec.capacity();
+    }
+
+
+    std::cout << "Size keys: " << sizeKey << " | Size values: " << sizeValue << " | Total size: " << total << ".\n";
+    std::cout << "Num entries: " << numEntries << "\n";
+    return total;
+}
+
+uint64_t Lookup::getSize(std::map<uint64_t, std::vector<char>>& map) {
+    size_t total = 0;
+    constexpr size_t mapNodeOverhead = 40; // STL-dependent, this is an approximation
+    unsigned long long numEntries = 0;
+
+    for (const auto& [key, vec] : map) {
+        total += mapNodeOverhead;
+        total += sizeof(key);
+        total += sizeof(vec);
+        total += vec.capacity(); // each char is 1 byte
+
+        numEntries += 1;
+    }
+
+    std::cout << "Num entries: " << numEntries << "\n";
+    return total;
+}
+
+uint64_t Lookup::getSize(std::map<uint64_t, uint32_t>& map) {
+    size_t total = 0;
+    constexpr size_t mapNodeOverhead = 40; // STL-dependent, this is an approximation
+    unsigned long long numEntries = 0;
+
+    size_t sizeKey = 0;
+    size_t sizeValue = 0;
+
+    for (const auto& [key, vec] : map) {
+        total += mapNodeOverhead;
+        total += sizeof(key);
+        total += sizeof(vec);
+
+        sizeKey += sizeof(key);
+        sizeValue += sizeof(vec);
+
+        numEntries += 1;
+    }
+
+    std::cout << "Size keys: " << sizeKey << " | Size values: " << sizeValue << " | Total size: " << total << ".\n";
+    std::cout << "Num entries: " << numEntries << "\n";
+    return total;
+}
+
+uint64_t Lookup::getSize(std::map<std::pair<uint32_t, uint16_t>, uint32_t>& map) {
+    size_t total = 0;
+    constexpr size_t mapNodeOverhead = 40; // STL-dependent, this is an approximation
+    unsigned long long numEntries = 0;
+
+    size_t sizeKey = 0;
+    size_t sizeValue = 0;
+
+    for (const auto& [key, vec] : map) {
+        total += mapNodeOverhead;
+        total += sizeof(key);
+        total += sizeof(vec);
+
+        sizeKey += sizeof(key);
+        sizeValue += sizeof(vec);
+
+        numEntries += 1;
+    }
+
+    std::cout << "Size keys: " << sizeKey << " | Size values: " << sizeValue << " | Total size: " << total << ".\n";
+    std::cout << "Num entries: " << numEntries << "\n";
+    return total;
+}
+
+
 Lookup Lookup::loadAllMaps() {
     Lookup lookup;
 
     std::string titleDesktopOld = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables";
     std::string titleLaptop = "C:/Users/oyste/Programering Lokal Laptop/RubiksCubeHashTables";
     std::string titleDesktop = "C:/LokalProg/RubiksCubeHashTables";
-    std::string title = titleLaptop;
+    std::string title = titleDesktop;
 
     std::string crossTitle = title + "/crossAnd2Corners7D.txt";
     load(lookup.crossAnd2Corners, crossTitle);

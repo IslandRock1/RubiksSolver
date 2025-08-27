@@ -36,6 +36,10 @@ public:
     static void save(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
     static void load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
 
+    static uint64_t getSize(std::map<std::array<unsigned int, 4>, std::vector<char>> &map);
+    static uint64_t getSize(std::map<uint64_t, std::vector<char>> &map);
+    static uint64_t getSize(std::map<uint64_t, uint32_t> &map);
+    static uint64_t getSize(std::map<std::pair<uint32_t, uint16_t>, uint32_t> &map);
     static Lookup loadAllMaps();
 };
 

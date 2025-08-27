@@ -118,7 +118,6 @@ std::vector<Move> Move::combineMovesWithLookupMoves(const std::vector<Move>& mov
     return outMoves;
 }
 
-
 std::vector<Move> Move::combineMoves(std::vector<Move> &firstMoves, std::vector<Move> &secondMoves) {
     std::vector<Move> outMoves;
 
@@ -215,5 +214,12 @@ void Move::printMoves(std::vector<Move> &moves) {
     std::cout << "\n";
 }
 
+void Move::printMoves(const std::vector<char>& moves, const std::string& end) {
+    for (const auto m : moves) {
+        std::cout << m;
+    }
+
+    std::cout << end;
+}
 
 

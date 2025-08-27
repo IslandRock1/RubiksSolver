@@ -2,14 +2,19 @@
 #include <iostream>
 #include "Solver.hpp"
 
-std::vector<Move> Solver::solveFullCube(RubiksCube &cube, Lookup &lookup) {
+std::vector<Move> Solver::solveFullCube(RubiksCube &cube, Lookup &lookup, const int depth, const bool twoCorner) {
 
 	std::array<short, 48> shuffleCubeCopy;
 	for (int i = 0; i < 48; i++) {
 		shuffleCubeCopy[i] = cube.cube[i];
 	}
 
-	auto solutions = findCrossAnd2Corners(cube, lookup, 4);
+	std::vector<Solution> solutions;
+	if (twoCorner) {
+		solutions = findCrossAnd2Corners(cube, lookup, depth);
+	} else {
+		solutions = findCrossAnd3Corners(cube, lookup, depth);
+	}
 
 	for (auto &solution : solutions) {
 		RubiksCube cubeSolutions;
@@ -29,19 +34,15 @@ std::vector<Move> Solver::solveFullCube(RubiksCube &cube, Lookup &lookup) {
 	findAndTestSolutionsFirstTwoLayers(shuffleCubeCopy, lookup, solutions);
 	findAndTestSolutionsLastLayer(shuffleCubeCopy, lookup, solutions);
 
-	Solution bestSol;
 	std::vector<Move> out;
 	int fewestMoves = 100;
-	for (auto &sol : solutions) {
-		std::vector<std::vector<Move>> allMoves = {sol.crossMoves, sol.twoLayerMoves, sol.lastLayerMoves};
+	for (const auto &sol : solutions) {
+		std::vector allMoves = {sol.crossMoves, sol.twoLayerMoves, sol.lastLayerMoves};
 		auto combinedMoves = Move::combineMoves(allMoves);
 
-		int num = combinedMoves.size();
-
+		const int num = combinedMoves.size();
 		if (num < fewestMoves) {
 			fewestMoves = num;
-			bestSol = sol;
-
 			out = combinedMoves;
 		}
 	}
@@ -59,6 +60,25 @@ std::vector<Solution> Solver::findCrossAnd2Corners(RubiksCube &cube, Lookup &loo
 	searchMoves(searchConditions, depth);
 
 	if (solutions.empty()) {
+		// std::cout << "Had to increase depth" << "\n";
+		return findCrossAnd2Corners(cube, lookup, depth + 1);
+		// throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
+	} else {
+		return solutions;
+	}
+}
+
+std::vector<Solution> Solver::findCrossAnd3Corners(RubiksCube &cube, Lookup &lookup, int depth) {
+	if ((cube.numCornerSolved() == 3) && cube.solvedWhiteCross()) {return {};}
+
+	std::vector<Move> moves;
+	std::vector<Solution> solutions;
+
+	SearchConditions searchConditions = {cube, lookup.crossAnd3Corners, moves, solutions, ThreeCorners};
+	searchMoves(searchConditions, depth);
+
+	if (solutions.empty()) {
+		std::cout << "\n";
 		std::cout << "Had to increase depth" << "\n";
 		return findCrossAnd2Corners(cube, lookup, depth + 1);
 		// throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
@@ -154,6 +174,9 @@ void Solver::searchMoves(SearchConditions &searchConditions, int depth) {
 		Solution newSol;
 		newSol.crossMoves = solution;
 		searchConditions.solutions.push_back(newSol);
+
+		std::cout << "\n";
+		std::cout << "Found a solution!" << "\n";
 	}
 
 	if (depth == 0) {return;}

@@ -35,6 +35,7 @@ public:
     static std::vector<Move> convertVectorCharToMove(const std::vector<char> &moves);
 
     static void printMoves(std::vector<Move> &moves);
+    static void printMoves(const std::vector<char> &moves, const std::string& end = "\n");
 };
 
 

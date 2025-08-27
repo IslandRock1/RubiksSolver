@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.26)
-project(RubiksSolver)
+project(RubiksSolver LANGUAGES CXX CUDA)
 set(CMAKE_CXX_STANDARD 20)
 
 # Remember to also change Lookup::loadAllMaps()!!!!
-option(LAPTOP_PATH "Use laptop path" ON)
+option(LAPTOP_PATH "Use laptop path" OFF)
 
 if (LAPTOP_PATH)
     set(pybind11_DIR C:/Users/oyste/AppData/Local/Packages/PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0/LocalCache/local-packages/Python311/site-packages/pybind11/share/cmake/pybind11)
@@ -31,16 +31,19 @@ set(HEADERS
 )
 
 # Build exe
-add_executable(RubiksSolverExe src/main.cpp ${SHARED_SOURCES})
-target_include_directories(RubiksSolverExe PRIVATE include)
+add_executable(RubiksSolverExeExe src/main.cpp ${SHARED_SOURCES})
+target_include_directories(RubiksSolverExeExe PRIVATE include)
+
+add_executable(CudaSolver src/main.cu ${SHARED_SOURCES})
+target_include_directories(CudaSolver PRIVATE include)
 
 # Build python module
 add_library(RubiksSolver MODULE ${SHARED_SOURCES} src/RubiksSolver.cpp)  # Add pybind source file
 target_include_directories(RubiksSolver PRIVATE include)
 target_link_libraries(RubiksSolver PRIVATE pybind11::module Python::Python)
-set_target_properties(RubiksSolver PROPERTIES SUFFIX ".pyd")
+set_target_properties(RubiksSolver PROPERTIES SUFFIX ".so")
 
 add_library(RubiksCubeWrapper MODULE ${SHARED_SOURCES} src/RubiksCubeWrapper.cpp)  # Add pybind source file
 target_include_directories(RubiksCubeWrapper PRIVATE include)
 target_link_libraries(RubiksCubeWrapper PRIVATE pybind11::module Python::Python)
-set_target_properties(RubiksCubeWrapper PROPERTIES SUFFIX ".pyd")
+set_target_properties(RubiksCubeWrapper PROPERTIES SUFFIX ".so")
