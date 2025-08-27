@@ -476,11 +476,7 @@ uint64_t Lookup::getSize(std::map<std::pair<uint32_t, uint16_t>, uint32_t>& map)
 
 Lookup Lookup::loadAllMaps() {
     Lookup lookup;
-
-    std::string titleDesktopOld = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables";
-    std::string titleLaptop = "C:/Users/oyste/Programering Lokal Laptop/RubiksCubeHashTables";
-    std::string titleDesktop = "C:/LokalProg/RubiksCubeHashTables";
-    std::string title = titleDesktop;
+    std::string title = DATA_PATH;
 
     std::string crossTitle = title + "/crossAnd2Corners7D.txt";
     load(lookup.crossAnd2Corners, crossTitle);

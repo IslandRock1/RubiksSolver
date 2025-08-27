@@ -11,6 +11,8 @@ else()
     set(pybind11_DIR C:/Users/oyste/AppData/Local/Programs/Python/Python312/Lib/site-packages/pybind11/share/cmake/pybind11)
 endif()
 
+set(pybind11_DIR ${CMAKE_SOURCE_DIR}/.venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11)
+
 find_package(Python REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 REQUIRED)
 
@@ -47,3 +49,5 @@ add_library(RubiksCubeWrapper MODULE ${SHARED_SOURCES} src/RubiksCubeWrapper.cpp
 target_include_directories(RubiksCubeWrapper PRIVATE include)
 target_link_libraries(RubiksCubeWrapper PRIVATE pybind11::module Python::Python)
 set_target_properties(RubiksCubeWrapper PROPERTIES SUFFIX ".so")
+
+target_compile_definitions(RubiksSolver PRIVATE DATA_PATH="${CMAKE_SOURCE_DIR}/data")
