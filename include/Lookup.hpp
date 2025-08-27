@@ -8,6 +8,7 @@
 #include <map>
 #include <array>
 #include <vector>
+#include <cstdint>
 
 #include "RubiksCube.hpp"
 

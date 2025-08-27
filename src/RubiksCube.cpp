@@ -5,6 +5,7 @@
 #include <iostream>
 #include <random>
 #include <bitset>
+#include <cstdint>
 
 #include "RubiksCube.hpp"
 

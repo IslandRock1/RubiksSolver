@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.26)
-project(RubiksSolver LANGUAGES CXX CUDA)
+project(RubiksSolver LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 # Remember to also change Lookup::loadAllMaps()!!!!

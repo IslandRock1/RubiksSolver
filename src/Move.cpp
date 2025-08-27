@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <algorithm>
 #include "RubiksCube.hpp"
 #include "Move.hpp"
 
