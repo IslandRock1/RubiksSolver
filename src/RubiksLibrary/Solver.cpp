@@ -1,6 +1,8 @@
 
 #include <iostream>
-#include "Solver.hpp"
+
+#include "RubiksLibrary/Solver.hpp"
+#include "RubiksLibrary/Move.hpp"
 
 std::vector<Move> Solver::solveFullCube(RubiksCube &cube, Lookup &lookup, const int depth, const bool twoCorner) {
 

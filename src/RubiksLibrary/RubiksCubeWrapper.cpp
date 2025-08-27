@@ -4,7 +4,7 @@
 
 #include <array>
 
-#include "RubiksCube.hpp"
+#include "RubiksLibrary/RubiksCube.hpp"
 
 class RubiksCubeWrapper {
 public:

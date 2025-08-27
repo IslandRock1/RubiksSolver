@@ -7,7 +7,7 @@
 
 #include <array>
 #include <vector>
-#include "Move.hpp"
+#include "RubiksLibrary/Move.hpp"
 
 class Solution {
 public:

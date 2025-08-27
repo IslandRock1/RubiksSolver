@@ -5,8 +5,8 @@
 #include <iostream>
 #include <vector>
 
-#include "Solver.hpp"
-#include "Lookup.hpp"
+#include "RubiksLibrary/Solver.hpp"
+#include "RubiksLibrary/Lookup.hpp"
 
 class RubiksSolver {
 public:

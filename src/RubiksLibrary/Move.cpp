@@ -4,8 +4,9 @@
 
 #include <iostream>
 #include <algorithm>
-#include "RubiksCube.hpp"
-#include "Move.hpp"
+
+#include "RubiksLibrary/RubiksCube.hpp"
+#include "RubiksLibrary/Move.hpp"
 
 Move::Move(char m): move(m) {
     constexpr char moves[18] = {

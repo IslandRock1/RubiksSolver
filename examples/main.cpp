@@ -6,7 +6,8 @@
 #include <random>
 #include <limits>
 #include <chrono>
-#include <Lookup.hpp>
+
+#include "RubiksLibrary/Lookup.hpp"
 
 /*
 

@@ -7,7 +7,7 @@
 #include <bitset>
 #include <cstdint>
 
-#include "RubiksCube.hpp"
+#include "RubiksLibrary/RubiksCube.hpp"
 
 std::array<Move, 18> RubiksConst::everyMove = {
         Move('A'), Move('B'), Move('C'), Move('D'), Move('E'), Move('F'),

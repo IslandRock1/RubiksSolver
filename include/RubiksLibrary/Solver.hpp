@@ -7,9 +7,10 @@
 
 #include <map>
 
-#include "Lookup.hpp"
-#include "solution.hpp"
-#include "RubiksCube.hpp"
+#include "RubiksLibrary/Move.hpp"
+#include "RubiksLibrary/Lookup.hpp"
+#include "RubiksLibrary/solution.hpp"
+#include "RubiksLibrary/RubiksCube.hpp"
 
 struct SearchConditions {
 	RubiksCube &cube;

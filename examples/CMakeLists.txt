@@ -1,0 +1,6 @@
+
+add_executable(RubiksSolverExeExe main.cpp)
+target_link_libraries(RubiksSolverExeExe PRIVATE RubiksSolverLibrary)
+
+add_executable(CudaSolver main.cu)
+target_link_libraries(CudaSolver PRIVATE RubiksSolverLibrary)

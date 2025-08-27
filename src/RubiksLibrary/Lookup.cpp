@@ -6,8 +6,8 @@
 #include <chrono>
 #include <fstream>
 
-#include "Move.hpp"
-#include "Lookup.hpp"
+#include "RubiksLibrary/Move.hpp"
+#include "RubiksLibrary/Lookup.hpp"
 
 #include <ranges>
 

@@ -8,7 +8,7 @@
 #include <array>
 #include <string>
 
-#include "Move.hpp"
+#include "RubiksLibrary/Move.hpp"
 
 enum Hash {
     TwoCorners,

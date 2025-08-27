@@ -9,7 +9,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "Lookup.hpp"
+#include "RubiksLibrary/Lookup.hpp"
 
 class RubiksSolver {
 public:

@@ -10,7 +10,7 @@
 #include <vector>
 #include <cstdint>
 
-#include "RubiksCube.hpp"
+#include "RubiksLibrary/RubiksCube.hpp"
 
 struct Position {
     std::array<int, 10> currPos = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
