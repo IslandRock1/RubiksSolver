@@ -1,4 +1,6 @@
 .idea
 cmake-build-*
-DATA
 .venv
+
+DATA/*
+!DATA/README.md
