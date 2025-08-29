@@ -1,6 +1,3 @@
-//
-// Created by Øystein Bringsli.
-//
 
 #ifndef RUBIKSSOLVER_RUBIKSCUBE_HPP
 #define RUBIKSSOLVER_RUBIKSCUBE_HPP
@@ -136,6 +133,5 @@ private:
     void turnYellow2();
     void turnYellow3();
 };
-
 
 #endif //RUBIKSSOLVER_RUBIKSCUBE_HPP

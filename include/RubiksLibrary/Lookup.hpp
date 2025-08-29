@@ -1,6 +1,3 @@
-//
-// Created by Øystein Bringsli.
-//
 
 #ifndef RUBIKSSOLVER_LOOKUP_HPP
 #define RUBIKSSOLVER_LOOKUP_HPP

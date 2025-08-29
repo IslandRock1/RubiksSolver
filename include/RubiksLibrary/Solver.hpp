@@ -1,6 +1,3 @@
-//
-// Created by oyste on 2/23/2025.
-//
 
 #ifndef SOLVER_HPP
 #define SOLVER_HPP
@@ -31,7 +28,6 @@ private:
 	void findAndTestSolutionsLastLayer(std::array<short, 48> &shuffled, Lookup &lookup, std::vector<Solution> &solutions);
 	void searchMoves(SearchConditions &searchConditions, int depth);
 };
-
 
 
 #endif //SOLVER_HPP

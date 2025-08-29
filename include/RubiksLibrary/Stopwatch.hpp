@@ -1,6 +1,3 @@
-//
-// Created by Øystein Bringsli.
-//
 
 #include <chrono>
 

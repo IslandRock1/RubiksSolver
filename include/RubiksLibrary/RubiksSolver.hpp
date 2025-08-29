@@ -1,6 +1,3 @@
-//
-// Created by oyste on 2/23/2025.
-//
 
 #ifndef RUBIKSSOLVER_HPP
 #define RUBIKSSOLVER_HPP
@@ -27,7 +24,6 @@ PYBIND11_MODULE(RubiksSolver, m) {
 		.def(pybind11::init<>())
 		.def("solve", &RubiksSolver::solve);
 }
-
 
 
 #endif //RUBIKSSOLVER_HPP
