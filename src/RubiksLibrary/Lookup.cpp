@@ -211,41 +211,8 @@ void generateLookupCrossAnd3Corners(
 void Lookup::makeWholeCube(int depth) {
     auto start = std::chrono::high_resolution_clock::now();
 
-//    RubiksCube cube;
-//    std::vector<char> moves;
-//    generateLookupWholeCube(wholeCube, moves, cube, depth + 1);
-
-    std::string title;
-    switch (depth) {
-        case 8:
-        {
-            throw std::runtime_error("Sorry not yet");
-            title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/wholeCube8D.txt";
-        } break;
-
-        case 7:
-        {
-            title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/wholeCube7D.txt";
-        } break;
-
-        case 6:
-        {
-            title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/wholeCube6D.txt";
-        } break;
-
-        default:
-        {
-            throw std::runtime_error("What? Need better depth for makeWholeCube");
-        }
-    }
-
+    std::string title = std::string(DATA_PATH) + "/wholeCube" + std::to_string(depth) + "D.txt";;
     load(wholeCube, title);
-
-//    RubiksCube cube;
-//    std::vector<char> moves;
-//
-//    Position currPos;
-//    generateLookupWholeCube(wholeCube, moves, cube, depth + 2, currPos);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto durLookup = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -351,6 +318,10 @@ unsigned int create_int(std::string &str) {
 
 void Lookup::load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title) {
     std::ifstream file(title);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not find the specified lookuptable.");
+    }
+
     std::string text;
 
     while (std::getline(file, text)) {
@@ -469,7 +440,6 @@ uint64_t Lookup::getSize(std::map<std::pair<uint32_t, uint16_t>, uint32_t>& map)
     std::cout << "Num entries: " << numEntries << "\n";
     return total;
 }
-
 
 Lookup Lookup::loadAllMaps() {
     Lookup lookup;
