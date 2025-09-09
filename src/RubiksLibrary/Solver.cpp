@@ -177,8 +177,8 @@ void Solver::searchMoves(SearchConditions &searchConditions, int depth) {
 		newSol.crossMoves = solution;
 		searchConditions.solutions.push_back(newSol);
 
-		std::cout << "\n";
-		std::cout << "Found a solution!" << "\n";
+		// std::cout << "\n";
+		// std::cout << "Found a solution!" << "\n";
 	}
 
 	if (depth == 0) {return;}
