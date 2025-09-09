@@ -21,4 +21,5 @@ find_package(Python REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 REQUIRED)
 
 add_subdirectory(examples)
+add_subdirectory(tests)
 add_subdirectory(src)

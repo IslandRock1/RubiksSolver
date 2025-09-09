@@ -1,0 +1,3 @@
+
+add_executable(TestSolvingSpeed SolvingSpeed.cpp)
+target_link_libraries(TestSolvingSpeed PRIVATE RubiksSolverLibrary)
