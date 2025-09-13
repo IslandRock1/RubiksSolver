@@ -86,6 +86,139 @@ std::array<unsigned int, 4> RubiksCube::hashCrossAnd2Corners() {
     return vals;
 }
 
+std::array<unsigned int, 4> RubiksCube::hashCrossAnd2CornersV1() const {
+    std::array<unsigned int, 4> vals = {0, 0, 0, 0};
+
+    for (int i = 0; i < 4; i++) {
+        unsigned int val = 0;
+        for (int k = 0; k < 4; k++) {
+
+            auto ix0 = 12 * i + 3 * k + 0;
+            auto ix1 = ix0 + 1;
+            auto ix2 = ix0 + 2;
+
+            auto face0 = cube[ix0];
+            auto face1 = cube[ix1];
+            auto face2 = cube[ix2];
+
+            std::array<int, 3> indices = {ix0, ix1, ix2};
+            std::array<short, 3> faces = {face0, face1, face2};
+            std::array<int, 3> output = {0, 0, 0};
+
+            for (int newIx = 0; newIx < 3; newIx++) {
+                const auto& piece0 = RubiksConst::physicalPieces[indices[newIx]];
+                auto currentFace = faces[newIx];
+                output[newIx] = faces[newIx];
+
+                if (piece0.size() > 1) {
+
+                    if ((cube[piece0[0]] == 5) || (cube[piece0[1]] == 5) || (currentFace == 5)) {
+                        output[newIx] = 5;
+                    } else {
+                        auto white = (currentFace == 0) + (cube[piece0[0]] == 0) + (cube[piece0[1]] == 0);
+                        auto orange = (currentFace == 4) + (cube[piece0[0]] == 4) + (cube[piece0[1]] == 4);
+                        auto green = (currentFace == 3) + (cube[piece0[0]] == 3) + (cube[piece0[1]] == 3);
+                        auto blue = (currentFace == 2) + (cube[piece0[0]] == 2) + (cube[piece0[1]] == 2);
+
+                        if ((white + orange + green) == 3) {
+                            output[newIx] = 5;
+                        } else if ((white + orange + blue) == 3) {
+                            output[newIx] = 5;
+                        }
+                    }
+
+                } else {
+
+                    const auto orange = (currentFace == 4) + (cube[piece0[0]] == 4);
+                    const auto green = (currentFace == 3) + (cube[piece0[0]] == 3);
+                    const auto blue = (currentFace == 2) + (cube[piece0[0]] == 2);
+
+                    const bool c0 = (cube[piece0[0]] == 5) || (currentFace == 5);
+                    const bool c1 = (orange && green);
+                    const bool c2 = (orange && blue);
+                    const bool c = (c0 || c1 || c2);
+
+                    output[newIx] =
+                        5 * (c) + output[newIx] * (!c);
+                }
+            }
+
+            auto convert = convertBase5ToBin(output[0], output[1], output[2]);
+            val = val << 8;
+            val |= convert;
+
+        }
+        vals[i] = val;
+    }
+
+    return vals;
+}
+
+std::array<unsigned int, 4> RubiksCube::hashCrossAnd2CornersV2() {
+    std::array<unsigned int, 4> vals = {0, 0, 0, 0};
+
+    for (int i = 0; i < 4; i++) {
+        unsigned int val = 0;
+        for (int k = 0; k < 4; k++) {
+
+            const auto ix0 = 12 * i + 3 * k + 0;
+            const auto ix1 = ix0 + 1;
+            const auto ix2 = ix0 + 2;
+
+            const auto face0 = cube[ix0];
+            const auto face1 = cube[ix1];
+            const auto face2 = cube[ix2];
+
+            const std::array<int, 3> indices = {ix0, ix1, ix2};
+            const std::array<short, 3> faces = {face0, face1, face2};
+            std::array<int, 3> output = {0, 0, 0};
+
+            for (int newIx = 0; newIx < 3; newIx++) {
+                const auto& piece0 = RubiksConst::physicalPieces[indices[newIx]];
+                const auto currentFace = faces[newIx];
+                output[newIx] = faces[newIx];
+
+                if (piece0.size() > 1) {
+                    auto white = (currentFace == 0) + (cube[piece0[0]] == 0) + (cube[piece0[1]] == 0);
+                    auto orange = (currentFace == 4) + (cube[piece0[0]] == 4) + (cube[piece0[1]] == 4);
+                    auto green = (currentFace == 3) + (cube[piece0[0]] == 3) + (cube[piece0[1]] == 3);
+                    auto blue = (currentFace == 2) + (cube[piece0[0]] == 2) + (cube[piece0[1]] == 2);
+
+                    bool c0 = (cube[piece0[0]] == 5) || (cube[piece0[1]] == 5) || (currentFace == 5);
+                    bool c1 = ((white + orange + green) == 3);
+                    bool c2 = ((white + orange + blue) == 3);
+                    bool c = (c0 || c1 || c2);
+
+                    output[newIx] =
+                        5 * (c) + output[newIx] * (!c);
+
+                } else {
+
+                    const auto orange = (currentFace == 4) + (cube[piece0[0]] == 4);
+                    const auto green = (currentFace == 3) + (cube[piece0[0]] == 3);
+                    const auto blue = (currentFace == 2) + (cube[piece0[0]] == 2);
+
+                    const bool c0 = (cube[piece0[0]] == 5) || (currentFace == 5);
+                    const bool c1 = (orange && green);
+                    const bool c2 = (orange && blue);
+                    const bool c = (c0 || c1 || c2);
+
+                    output[newIx] =
+                        5 * (c) + output[newIx] * (!c);
+                }
+            }
+
+            auto convert = convertBase5ToBin(output[0], output[1], output[2]);
+            val = val << 8;
+            val |= convert;
+
+        }
+        vals[i] = val;
+    }
+
+    return vals;
+}
+
 std::array<unsigned int, 4> RubiksCube::hashCrossAnd3Corners() {
     std::array<unsigned int, 4> vals = {0, 0, 0, 0};
 
@@ -228,7 +361,7 @@ std::array<unsigned int, 4> RubiksCube::getFromHash(Hash hash) {
     switch (hash) {
         case TwoCorners:
         {
-            return hashCrossAnd2Corners();
+            return hashCrossAnd2CornersV1();
         } break;
 
         case ThreeCorners:

@@ -91,6 +91,8 @@ public:
 
     std::array<unsigned int, 4> hashFirstTwoLayers();
     std::array<unsigned int, 4> hashCrossAnd2Corners();
+    std::array<unsigned int, 4> hashCrossAnd2CornersV1() const;
+    std::array<unsigned int, 4> hashCrossAnd2CornersV2();
     std::array<unsigned int, 4> hashCrossAnd3Corners();
     std::array<unsigned int, 4> hashFullCube();
     std::array<unsigned int, 4> getFromHash(Hash hash);
