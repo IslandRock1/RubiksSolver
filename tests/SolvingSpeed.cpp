@@ -59,7 +59,7 @@ void testNumSolvingMoves() {
 	auto now = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < num_test; i++) {
 		cube.shuffle(50);
-		auto solvingMoves = solver.solveFullCube(cube, lookup);
+		auto solvingMoves = solver.solveFullCubeUsingUnordered(cube, lookup, 5);
 		totNumMoves += solvingMoves.size();
 
 		auto t1 = std::chrono::high_resolution_clock::now();
@@ -77,6 +77,10 @@ void testNumSolvingMoves() {
 	auto totTime = std::chrono::duration_cast<std::chrono::milliseconds>(after - now).count();
 	std::cout << "Total time: " << totTime << " | Avg time: " << static_cast<double>(totTime) / static_cast<double>(num_test)
 	<< "\n";
+
+	// Solved 100 cubes, avg number of moves: 28.73. Total time: 18161 | Avg time: 181.61 (original)
+	// Solved 100 cubes, avg number of moves: 28.73. Total time:  8484 | Avg time:  84.84 (faster hashing)
+	// Solved 100 cubes, avg number of moves: 28.73. Total time:  6388 | Avg time:  63.88 (unordered map)
 }
 
 int main() {
