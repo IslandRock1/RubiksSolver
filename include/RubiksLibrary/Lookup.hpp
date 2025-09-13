@@ -15,6 +15,11 @@ struct Position {
 
 class Lookup {
 public:
+    // You will be tempted to switch to unordered maps, its a trap!
+    // There is no built in hashing function for arr<int, 4>
+    // So unless you can hash to a size_t (64 bit), dont do it!
+    // But, i probably can.., so i should at some point do it
+    // TODO: use unordered maps.
     std::map<std::array<unsigned int, 4>, std::vector<char>> firstTwoLayers;
     std::map<std::array<unsigned int, 4>, std::vector<char>> crossAnd2Corners;
     std::map<std::array<unsigned int, 4>, std::vector<char>> crossAnd3Corners;
@@ -31,14 +36,19 @@ public:
 
     static bool prune(Move &currentMove, Move &prevMove, Move &doublePrevMove);
 
+    static void save(std::map<std::array<unsigned int, 4>, uint32_t> &map, const std::string &title);
+    static void save(std::map<std::pair<uint32_t, uint16_t>, uint32_t>& map, const std::string& title);
     static void save(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
     static void load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
 
+    static uint64_t getSize(std::map<std::array<unsigned int, 4>, uint32_t> &map);
     static uint64_t getSize(std::map<std::array<unsigned int, 4>, std::vector<char>> &map);
     static uint64_t getSize(std::map<uint64_t, std::vector<char>> &map);
     static uint64_t getSize(std::map<uint64_t, uint32_t> &map);
     static uint64_t getSize(std::map<std::pair<uint32_t, uint16_t>, uint32_t> &map);
     static Lookup loadAllMaps();
+
+    static void convertAndSave(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
 };
 
 

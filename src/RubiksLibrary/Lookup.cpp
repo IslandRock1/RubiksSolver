@@ -24,6 +24,34 @@ bool Lookup::prune(Move &currentMove, Move &prevMove, Move &doublePrevMove) {
     return false;
 }
 
+uint32_t hashMoves(const std::vector<char> &moves) {
+
+    /*
+
+    Max moves: 7
+    Each move can be A, B, C, ..., Q, R
+    18 legal moves.
+    18 ** 7 = 612220032
+    32b:     4294967296
+    30b:     1073741824
+
+    As there are 18 different values, one would need
+    5 bits, multiply by 7 we get 35 bits. Too many!
+
+    Therefore, should probably use base 18 number...
+
+    */
+
+    uint64_t num = 0;
+
+    for (auto &m : moves) {
+        num *= 18;
+        num += (m - 'A');
+    }
+
+    return num;
+}
+
 void printStruct(const Position& s) {
     std::cout << "Array elements: ";
     for (int i : s.currPos) {
@@ -266,6 +294,25 @@ void Lookup::makeCrossAnd2Corners(int depth) {
     std::cout << "Size of 2 corner table is " << crossAnd2Corners.size() << " in " << durLookup.count() / 1000 / 1000 << " seconds." << "\n";
 }
 
+void Lookup::convertAndSave(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title) {
+    std::map<std::array<unsigned int, 4>, uint32_t> smallerMap;
+
+    for (const auto& [key, vec] : map) {
+        auto newValue = hashMoves(vec);
+
+        auto iterator = smallerMap.find(key);
+        if (iterator == smallerMap.end()) {
+            smallerMap[key] = newValue;
+        } else {
+            std::cout << "Something wrong with keys...\n";
+            break;
+        }
+    }
+
+    getSize(smallerMap);
+    save(smallerMap, title);
+}
+
 void Lookup::makeCrossAnd3Corners(int depth) {
     auto start = std::chrono::high_resolution_clock::now();
     RubiksCube cube;
@@ -276,6 +323,73 @@ void Lookup::makeCrossAnd3Corners(int depth) {
     auto durLookup = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
     std::cout << "Size of 3 corner table is " << crossAnd3Corners.size() << " in " << durLookup.count() / 1000 / 1000 << " seconds." << "\n";
+    auto title = "crossAnd3Corners" + std::to_string(depth);
+    convertAndSave(crossAnd3Corners, title);
+}
+
+void Lookup::save(std::map<std::array<unsigned int, 4>, uint32_t>& map, const std::string& title) {
+    std::ofstream file(static_cast<std::string>(DATA_PATH) + "/" + title + ".txt");
+
+    for (const auto &entry : map) {
+        auto key = entry.first;
+        auto value = entry.second;
+
+        for (auto k : key) {
+            auto s = std::to_string(k);
+            for (auto i = 0; i < 16 - s.length(); i++) {
+                file << "A";
+            }
+
+            file << s;
+        }
+
+        auto strMoves = std::to_string(value);
+
+        for (auto i = 0; i < 10 - strMoves.length(); i++) {
+            file << "A";
+        }
+
+        file << strMoves;
+        file << "\n";
+    }
+
+    file.close();
+}
+
+
+void Lookup::save(std::map<std::pair<uint32_t, uint16_t>, uint32_t>& map, const std::string& title) {
+    std::ofstream file(static_cast<std::string>(DATA_PATH) + "/" + title);
+
+    for (const auto &entry : map) {
+        auto key = entry.first;
+        auto value = entry.second;
+
+        auto strKeyFirst = std::to_string(key.first);
+        auto strKeySecond = std::to_string(key.second);
+        auto strMoves = std::to_string(value);
+
+        for (auto i = 0; i < 10 - strKeyFirst.length(); i++) {
+            file << "A";
+        }
+
+        file << strKeyFirst;
+
+        for (auto i = 0; i < 10 - strKeySecond.length(); i++) {
+            file << "A";
+        }
+
+        file << strKeySecond;
+
+        for (auto i = 0; i < 10 - strMoves.length(); i++) {
+            file << "A";
+        }
+
+        file << strMoves;
+        file << "\n";
+    }
+
+    file.close();
+
 }
 
 void Lookup::save(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title) {
@@ -347,6 +461,31 @@ void Lookup::load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map,
 
     file.close();
 }
+
+uint64_t Lookup::getSize(std::map<std::array<unsigned int, 4>, uint32_t>& map) {
+    size_t total = 0;
+    constexpr size_t mapNodeOverhead = 40; // STL-dependent, this is an approximation
+    unsigned long long numEntries = 0;
+
+    size_t sizeKey = 0;
+    size_t sizeValue = 0;
+
+    for (const auto& [key, vec] : map) {
+        total += mapNodeOverhead;
+        total += sizeof(key);
+        total += sizeof(vec);
+
+        sizeKey += sizeof(key);
+        sizeValue += sizeof(vec);
+
+        numEntries += 1;
+    }
+
+    std::cout << "Size keys: " << sizeKey << " | Size values: " << sizeValue << " | Total size: " << total << ".\n";
+    std::cout << "Num entries: " << numEntries << " | Size: " << static_cast<double>(total) / (1024.0 * 1024.0 * 1024.0) << "GB.\n";
+    return total;
+}
+
 
 size_t Lookup::getSize(std::map<std::array<unsigned int, 4>, std::vector<char>>& map) {
     size_t total = 0;
