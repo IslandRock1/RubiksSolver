@@ -52,6 +52,49 @@ std::vector<Move> Solver::solveFullCube(RubiksCube &cube, Lookup &lookup, const 
 	return out;
 }
 
+std::vector<Move> Solver::solveFullCubeUsingUnordered(RubiksCube& cube, Lookup& lookup, int depth) {
+	std::array<short, 48> shuffleCubeCopy;
+	for (int i = 0; i < 48; i++) {
+		shuffleCubeCopy[i] = cube.cube[i];
+	}
+
+	auto solutions = findCrossAnd2CornersUnordered(cube, lookup, depth);
+
+	for (auto &solution : solutions) {
+		RubiksCube cubeSolutions;
+		for (int i = 0; i < 48; i++) {
+			cubeSolutions.cube[i] = shuffleCubeCopy[i];
+		}
+
+		for (auto &m : solution.crossMoves) {
+			cubeSolutions.turn(m);
+		}
+
+		cubeSolutions.raiseCross();
+		cubeSolutions.raiseTwoCorners();
+	}
+
+
+	findAndTestSolutionsFirstTwoLayers(shuffleCubeCopy, lookup, solutions);
+	findAndTestSolutionsLastLayer(shuffleCubeCopy, lookup, solutions);
+
+	std::vector<Move> out;
+	int fewestMoves = 100;
+	for (const auto &sol : solutions) {
+		std::vector allMoves = {sol.crossMoves, sol.twoLayerMoves, sol.lastLayerMoves};
+		auto combinedMoves = Move::combineMoves(allMoves);
+
+		const int num = combinedMoves.size();
+		if (num < fewestMoves) {
+			fewestMoves = num;
+			out = combinedMoves;
+		}
+	}
+
+	return out;
+}
+
+
 std::vector<Solution> Solver::findCrossAnd2Corners(RubiksCube &cube, Lookup &lookup, int depth) {
 	if ((cube.numCornerSolved() == 2) && cube.solvedWhiteCross()) {return {};}
 
@@ -69,6 +112,25 @@ std::vector<Solution> Solver::findCrossAnd2Corners(RubiksCube &cube, Lookup &loo
 		return solutions;
 	}
 }
+
+std::vector<Solution> Solver::findCrossAnd2CornersUnordered(RubiksCube& cube, Lookup& lookup, int depth) {
+	if ((cube.numCornerSolved() == 2) && cube.solvedWhiteCross()) {return {};}
+
+	std::vector<Move> moves;
+	std::vector<Solution> solutions;
+
+	SearchConditionsUnordered searchConditions = {cube, lookup.smallerUnorderedCrossAnd2Corners, moves, solutions, TwoCorners};
+	searchMovesUnordered(searchConditions, depth);
+
+	if (solutions.empty()) {
+		// std::cout << "Had to increase depth" << "\n";
+		return findCrossAnd2Corners(cube, lookup, depth + 1);
+		// throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
+	} else {
+		return solutions;
+	}
+}
+
 
 std::vector<Solution> Solver::findCrossAnd3Corners(RubiksCube &cube, Lookup &lookup, int depth) {
 	if ((cube.numCornerSolved() == 3) && cube.solvedWhiteCross()) {return {};}
@@ -204,6 +266,66 @@ void Solver::searchMoves(SearchConditions &searchConditions, int depth) {
 		cube.turn(m);
 
 		searchMoves(searchConditions, depth - 1);
+
+		cube.turn(m.face, 4 - m.rotations);
+		moves.pop_back();
+	}
+}
+
+std::vector<char> decodeMoves(uint64_t num, size_t length) {
+	std::vector<char> moves(length);
+
+	// Decode from last to first
+	for (size_t i = 0; i < length; ++i) {
+		moves[length - 1 - i] = 'A' + (num % 18); // remainder gives current move
+		num /= 18;                               // shift right in base 18
+	}
+
+	return moves;
+}
+
+void Solver::searchMovesUnordered(SearchConditionsUnordered& searchConditions, int depth) {
+	auto &cube = searchConditions.cube;
+	auto &lookup = searchConditions.lookup;
+
+	auto hash = Lookup::hashF(cube.getFromHash(searchConditions.hash));
+	auto lookupIterator = lookup.find(hash);
+	if (lookupIterator != lookup.end()) {
+		auto lookupChars = lookup[hash];
+		auto lookupMoves = Move::convertVectorCharToMove(lookupChars);
+		auto solution = Move::combineMovesWithLookupMoves(searchConditions.moves, lookupMoves);
+
+		Solution newSol;
+		newSol.crossMoves = solution;
+		searchConditions.solutions.push_back(newSol);
+
+		// std::cout << "\n";
+		// std::cout << "Found a solution!" << "\n";
+	}
+
+	if (depth == 0) {return;}
+
+	auto &moves = searchConditions.moves;
+	auto size = moves.size();
+
+	Move prevMove {7, 7};
+	Move doublePrevMove {7, 7};
+
+	if (size > 1) {
+		prevMove = moves[size - 1];
+		doublePrevMove = moves[size - 2];
+	} else if (size > 0) {
+		prevMove = moves[size - 1];
+	}
+
+	for (Move m : RubiksConst::everyMove)
+	{
+		if (Lookup::prune(m, prevMove, doublePrevMove)) { continue;}
+
+		moves.push_back(m);
+		cube.turn(m);
+
+		searchMovesUnordered(searchConditions, depth - 1);
 
 		cube.turn(m.face, 4 - m.rotations);
 		moves.pop_back();
