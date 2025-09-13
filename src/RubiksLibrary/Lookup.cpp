@@ -8,6 +8,30 @@
 
 #include <ranges>
 
+uint64_t Lookup::hashF(const std::array<unsigned int, 4> &num, uint32_t seed) {
+    uint64_t hash_value = 0x811C9DC5 ^ seed; // FNV offset basis XOR seed
+
+    std::string actualString;
+
+    for (auto val : num) {
+
+        auto str = std::to_string(val);
+
+        for (auto i = 0; i < 12 - str.length(); i++) {
+            actualString += "0";
+        }
+
+        actualString += str;
+    }
+
+    for (const char c : actualString) {
+        hash_value ^= static_cast<uint8_t>(c);
+        hash_value *= 0x01000193; // FNV prime
+        hash_value &= 0xFFFFFFFFFFFFFFFF; // Keep it to x bits
+    }
+    return hash_value;
+}
+
 bool Lookup::prune(Move &currentMove, Move &prevMove, Move &doublePrevMove) {
     if (currentMove.face == prevMove.face) { return true;}
 
@@ -580,12 +604,26 @@ uint64_t Lookup::getSize(std::map<std::pair<uint32_t, uint16_t>, uint32_t>& map)
     return total;
 }
 
+void generateSmaller(Lookup &lookup) {
+    for (const auto& [key, vec] : lookup.crossAnd2Corners) {
+        auto newKey = Lookup::hashF(key);
+        auto iterator = lookup.smallerUnorderedCrossAnd2Corners.find(newKey);
+        if (iterator != lookup.smallerUnorderedCrossAnd2Corners.end()) {
+            std::cout << "Something wrong, please kill me\n";
+            std::cin.get();
+        } else {
+            lookup.smallerUnorderedCrossAnd2Corners[Lookup::hashF(key)] = vec;
+        }
+    }
+}
+
 Lookup Lookup::loadAllMaps() {
     Lookup lookup;
     std::string title = DATA_PATH;
 
     std::string crossTitle = title + "/crossAnd2Corners7D.txt";
     load(lookup.crossAnd2Corners, crossTitle);
+    generateSmaller(lookup);
 
     std::string twoTitle = title + "/twoLayer.txt";
     load(lookup.solveTwoLayer, twoTitle);

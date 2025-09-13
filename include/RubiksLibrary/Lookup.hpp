@@ -2,6 +2,7 @@
 #ifndef RUBIKSSOLVER_LOOKUP_HPP
 #define RUBIKSSOLVER_LOOKUP_HPP
 
+#include <unordered_map>
 #include <map>
 #include <array>
 #include <vector>
@@ -22,6 +23,7 @@ public:
     // TODO: use unordered maps.
     std::map<std::array<unsigned int, 4>, std::vector<char>> firstTwoLayers;
     std::map<std::array<unsigned int, 4>, std::vector<char>> crossAnd2Corners;
+    std::unordered_map<uint64_t, std::vector<char>> smallerUnorderedCrossAnd2Corners;
     std::map<std::array<unsigned int, 4>, std::vector<char>> crossAnd3Corners;
     std::map<std::array<unsigned int, 4>, std::vector<char>> solveLastLayer;
     std::map<std::array<unsigned int, 4>, std::vector<char>> solveTwoLayer;
@@ -49,6 +51,7 @@ public:
     static Lookup loadAllMaps();
 
     static void convertAndSave(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
+    static uint64_t hashF(const std::array<unsigned int, 4> &num, uint32_t seed = 321464301);
 };
 
 
