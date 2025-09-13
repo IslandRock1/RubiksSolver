@@ -373,6 +373,30 @@ int main() {
 
 
 
+
+    RubiksCube cube;
+    Move m = Move(0, 1);
+    int numMoves = 50 * 1000 * 1000;
+    auto start = std::chrono::high_resolution_clock::now();
+    std::cout << "Turning\n";
+
+    for (int i = 0; i < numMoves; i++) {
+        cube.turn(m);
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto durLookup = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "Did " << numMoves << " moves in " << static_cast<double>(durLookup.count()) / 1000.0 / 1000.0 << " seconds." << "\n";
+
+    return 1;
+
+    Lookup lookupNew;
+
+    std::cout << "Starting depth: " << 8 << "\n";
+    lookupNew.makeCrossAnd3Corners(8);
+
+    return 69;
+
     auto lookup = Lookup::loadAllMaps().crossAnd2Corners;
     testSmallerTable(lookup);
     return 0;
