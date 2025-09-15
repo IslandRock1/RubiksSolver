@@ -101,6 +101,7 @@ public:
 
     void raiseCross();
     void raiseTwoCorners();
+    void raiseThreeCorners();
     void raiseTwoLayer();
     void raiseSolved();
 

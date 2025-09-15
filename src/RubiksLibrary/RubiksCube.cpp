@@ -239,7 +239,7 @@ std::array<unsigned int, 4> RubiksCube::hashCrossAnd3Corners() {
             std::array<int, 3> output = {0, 0, 0};
 
             for (int newIx = 0; newIx < 3; newIx++) {
-                auto piece0 = RubiksConst::physicalPieces[indices[newIx]];
+                const auto& piece0 = RubiksConst::physicalPieces[indices[newIx]];
                 auto currentFace = faces[newIx];
                 output[newIx] = faces[newIx];
 
@@ -508,6 +508,13 @@ void RubiksCube::raiseTwoCorners() {
         throw std::runtime_error("Not solved two corners.");
     }
 }
+
+void RubiksCube::raiseThreeCorners() {
+    if (numCornerSolved() < 3) {
+        throw std::runtime_error("Not solved three corners.");
+    }
+}
+
 
 void RubiksCube::raiseTwoLayer() {
     if (numCornerSolved() < 4) {
