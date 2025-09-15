@@ -31,6 +31,8 @@ public:
 	std::vector<Move> solveFullCube(RubiksCube &cube, Lookup &lookup, int depth = 4, bool twoCorner = true);
 	std::vector<Move> solveFullCubeUsingUnordered(RubiksCube &cube, Lookup &lookup, int depth = 4);
 
+	std::vector<Move> solveUpTo3Corners(RubiksCube &cube, Lookup &lookup, int depth = 4);
+
 private:
 	std::vector<Solution> findCrossAnd2Corners(RubiksCube &cube, Lookup &lookup, int depth = 3);
 	std::vector<Solution> findCrossAnd2CornersUnordered(RubiksCube &cube, Lookup &lookup, int depth = 3);

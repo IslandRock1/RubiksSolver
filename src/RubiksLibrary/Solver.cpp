@@ -52,11 +52,44 @@ std::vector<Move> Solver::solveFullCube(RubiksCube &cube, Lookup &lookup, const 
 	return out;
 }
 
-std::vector<Move> Solver::solveFullCubeUsingUnordered(RubiksCube& cube, Lookup& lookup, int depth) {
-	std::array<short, 48> shuffleCubeCopy;
-	for (int i = 0; i < 48; i++) {
-		shuffleCubeCopy[i] = cube.cube[i];
+std::vector<Move> Solver::solveUpTo3Corners(RubiksCube& cube, Lookup& lookup, int depth) {
+	std::array<short, 48> shuffleCubeCopy = cube.cube;
+
+	std::vector<Solution> solutions = findCrossAnd3Corners(cube, lookup, depth);
+
+	for (auto &solution : solutions) {
+		RubiksCube cubeSolutions;
+		for (int i = 0; i < 48; i++) {
+			cubeSolutions.cube[i] = shuffleCubeCopy[i];
+		}
+
+		for (auto &m : solution.crossMoves) {
+			cubeSolutions.turn(m);
+		}
+
+		cubeSolutions.raiseCross();
+		cubeSolutions.raiseThreeCorners();
 	}
+
+	std::vector<Move> out;
+	int fewestMoves = 100;
+	for (const auto &sol : solutions) {
+		std::vector allMoves = {sol.crossMoves};
+		auto combinedMoves = Move::combineMoves(allMoves);
+
+		const int num = combinedMoves.size();
+		if (num < fewestMoves) {
+			fewestMoves = num;
+			out = combinedMoves;
+		}
+	}
+
+	return out;
+}
+
+
+std::vector<Move> Solver::solveFullCubeUsingUnordered(RubiksCube& cube, Lookup& lookup, int depth) {
+	std::array<short, 48> shuffleCubeCopy = cube.cube;
 
 	auto solutions = findCrossAnd2CornersUnordered(cube, lookup, depth);
 
@@ -81,7 +114,7 @@ std::vector<Move> Solver::solveFullCubeUsingUnordered(RubiksCube& cube, Lookup& 
 	std::vector<Move> out;
 	int fewestMoves = 100;
 	for (const auto &sol : solutions) {
-		std::vector allMoves = {sol.crossMoves, sol.twoLayerMoves, sol.lastLayerMoves};
+		std::vector allMoves = {sol.crossMoves};
 		auto combinedMoves = Move::combineMoves(allMoves);
 
 		const int num = combinedMoves.size();
@@ -131,20 +164,19 @@ std::vector<Solution> Solver::findCrossAnd2CornersUnordered(RubiksCube& cube, Lo
 	}
 }
 
-
 std::vector<Solution> Solver::findCrossAnd3Corners(RubiksCube &cube, Lookup &lookup, int depth) {
 	if ((cube.numCornerSolved() == 3) && cube.solvedWhiteCross()) {return {};}
 
 	std::vector<Move> moves;
 	std::vector<Solution> solutions;
 
-	SearchConditions searchConditions = {cube, lookup.crossAnd3Corners, moves, solutions, ThreeCorners};
-	searchMoves(searchConditions, depth);
+	SearchConditionsUnordered searchConditions = {cube, lookup.smallerUnorderedCrossAnd3Corners, moves, solutions, ThreeCorners};
+	searchMovesUnordered(searchConditions, depth);
 
 	if (solutions.empty()) {
 		std::cout << "\n";
-		std::cout << "Had to increase depth" << "\n";
-		return findCrossAnd2Corners(cube, lookup, depth + 1);
+		std::cout << "Had to increase depth to " << depth + 1 << ".\n";
+		return findCrossAnd3Corners(cube, lookup, depth + 1);
 		// throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
 	} else {
 		return solutions;
