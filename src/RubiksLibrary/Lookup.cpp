@@ -219,6 +219,48 @@ void generateLookupCrossAnd2Corners(
     }
 }
 
+void generateLookupCrossAnd2Corners(
+        std::set<std::array<unsigned int, 4>> &map,
+        std::vector<char> &moves,
+        RubiksCube &cube,
+        int depth
+        )
+{
+    if (depth == 0) { return;}
+    if (depth == 3) {
+        for (const auto &m : moves) {
+            std::cout << m;
+        }
+        std::cout << "\r";
+    }
+
+    auto vals = cube.hashCrossAnd2Corners();
+    if (!map.contains(vals)) {
+        map.emplace(vals);
+    }
+
+    auto size = moves.size();
+    Move prevMove {7, 7};
+    Move doublePrevMove {7, 7};
+
+    if (size > 1) {
+        prevMove = Move(moves[size - 1]);
+        doublePrevMove = Move(moves[size - 2]);
+    } else if (size > 0) {
+        prevMove = Move(moves[size - 1]);
+    }
+
+    for (auto m : RubiksConst::everyMove) {
+        if (Lookup::prune(m, prevMove, doublePrevMove)) { continue;}
+
+        moves.push_back(m.move);
+        cube.turn(m);
+        generateLookupCrossAnd2Corners(map, moves, cube, depth - 1);
+        cube.turn(m.face, 4 - m.rotations);
+        moves.pop_back();
+    }
+}
+
 void generateLookupCrossAnd3Corners(
         std::map<std::array<unsigned int, 4>, std::vector<char>> &map,
         std::vector<char> &moves,
@@ -306,16 +348,21 @@ void Lookup::makeCrossAnd2Corners(int depth) {
         title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/crossAnd2Corners7D.txt";
     } else if (depth == 6) {
         title = "J:/Programmering (Lokalt Minne)/RubiksCubeHashTables/crossAnd2Corners6D.txt";
-    } else {
-        throw std::runtime_error("Only depth 6 and 7 made.");
+    } else if (depth == 8) {
+        RubiksCube cube;
+        std::vector<char> moves;
+        generateLookupCrossAnd2Corners(crossAnd2CornersLookupOnly, moves, cube, depth + 1);
+    }
+    else {
+        throw std::runtime_error("Only depth 6, 7, and 8 (ish) made.");
     }
 
-    load(crossAnd2Corners, title);
+    //load(crossAnd2Corners, title);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto durLookup = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
-    std::cout << "Size of 2 corner table is " << crossAnd2Corners.size() << " in " << durLookup.count() / 1000 / 1000 << " seconds." << "\n";
+    std::cout << "Size of 2 corner table is " << crossAnd2CornersLookupOnly.size() << " in " << durLookup.count() / 1000 / 1000 << " seconds." << "\n";
 }
 
 void Lookup::convertAndSave(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title) {
@@ -351,6 +398,26 @@ void Lookup::makeCrossAnd3Corners(int depth) {
     convertAndSave(crossAnd3Corners, title);
 }
 
+void Lookup::save(std::set<std::array<unsigned int, 4>>& map, const std::string& title) {
+    std::ofstream file(static_cast<std::string>(DATA_PATH) + "/" + title + ".txt");
+
+    for (const auto &entry : map) {
+        for (const auto k : entry) {
+            auto s = std::to_string(k);
+            for (auto i = 0; i < 16 - s.length(); i++) {
+                file << "A";
+            }
+
+            file << s;
+        }
+
+        file << "\n";
+    }
+
+    file.close();
+}
+
+
 void Lookup::save(std::map<std::array<unsigned int, 4>, uint32_t>& map, const std::string& title) {
     std::ofstream file(static_cast<std::string>(DATA_PATH) + "/" + title + ".txt");
 
@@ -379,7 +446,6 @@ void Lookup::save(std::map<std::array<unsigned int, 4>, uint32_t>& map, const st
 
     file.close();
 }
-
 
 void Lookup::save(std::map<std::pair<uint32_t, uint16_t>, uint32_t>& map, const std::string& title) {
     std::ofstream file(static_cast<std::string>(DATA_PATH) + "/" + title);
@@ -444,7 +510,7 @@ void Lookup::save(std::map<std::array<unsigned int, 4>, std::vector<char>> &map,
     file.close();
 }
 
-unsigned int create_int(std::string &str) {
+unsigned int create_int(const std::string &str) {
     unsigned int i = 0;
     for (auto c : str) {
         i *= 10;
@@ -485,6 +551,31 @@ void Lookup::load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map,
 
     file.close();
 }
+
+void Lookup::load(std::set<std::array<unsigned int, 4>>& map, std::string& title) {
+    std::ifstream file(title);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not find the specified lookuptable.");
+    }
+
+    std::string text;
+
+    while (std::getline(file, text)) {
+        std::array<unsigned int, 4> key = {0, 0, 0, 0};
+
+        std::string num = text.substr(0, 12);
+        key[0] = create_int(num);
+        num = text.substr(12, 12);
+        key[1] = create_int(num);
+        num = text.substr(24, 12);
+        key[2] = create_int(num);
+        num = text.substr(36, 12);
+        key[3] = create_int(num);
+    }
+
+    file.close();
+}
+
 
 uint64_t Lookup::getSize(std::map<std::array<unsigned int, 4>, uint32_t>& map) {
     size_t total = 0;

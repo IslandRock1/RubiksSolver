@@ -7,6 +7,7 @@
 #include <array>
 #include <vector>
 #include <cstdint>
+#include <set>
 
 #include "RubiksLibrary/RubiksCube.hpp"
 
@@ -23,7 +24,9 @@ public:
     // TODO: use unordered maps.
     std::map<std::array<unsigned int, 4>, std::vector<char>> firstTwoLayers;
     std::map<std::array<unsigned int, 4>, std::vector<char>> crossAnd2Corners;
+    std::set<std::array<unsigned int, 4>> crossAnd2CornersLookupOnly;
     std::unordered_map<uint64_t, std::vector<char>> smallerUnorderedCrossAnd2Corners;
+    std::unordered_map<uint64_t, std::vector<char>> smallerUnorderedCrossAnd3Corners;
     std::map<std::array<unsigned int, 4>, std::vector<char>> crossAnd3Corners;
     std::map<std::array<unsigned int, 4>, std::vector<char>> solveLastLayer;
     std::map<std::array<unsigned int, 4>, std::vector<char>> solveTwoLayer;
@@ -38,10 +41,12 @@ public:
 
     static bool prune(Move &currentMove, Move &prevMove, Move &doublePrevMove);
 
+    static void save(std::set<std::array<unsigned int, 4>> &map, const std::string &title);
     static void save(std::map<std::array<unsigned int, 4>, uint32_t> &map, const std::string &title);
     static void save(std::map<std::pair<uint32_t, uint16_t>, uint32_t>& map, const std::string& title);
     static void save(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
     static void load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
+    static void load(std::set<std::array<unsigned int, 4>> &map, std::string &title);
 
     static uint64_t getSize(std::map<std::array<unsigned int, 4>, uint32_t> &map);
     static uint64_t getSize(std::map<std::array<unsigned int, 4>, std::vector<char>> &map);
