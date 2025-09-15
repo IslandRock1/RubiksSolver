@@ -12,6 +12,17 @@ std::array<Move, 18> RubiksConst::everyMove = {
         Move('M'), Move('N'), Move('O'), Move('P'), Move('Q'), Move('R')
 };
 
+RubiksCube::RubiksCube() {
+    std::array positions = {1, 3, 4, 6, 9, 14, 20, 33, 25, 27, 28, 30, 0, 2, 5, 7, 24, 26, 29, 31};
+
+    hash = 0;
+    for (const auto p : positions) {
+        hash <<= 6;
+        hash += p;
+    }
+}
+
+
 unsigned short RubiksCube::convertBase5ToBin(int a, int b, int c) {
     return a * 36 + b * 6 + c;
 }
@@ -514,7 +525,6 @@ void RubiksCube::raiseThreeCorners() {
         throw std::runtime_error("Not solved three corners.");
     }
 }
-
 
 void RubiksCube::raiseTwoLayer() {
     if (numCornerSolved() < 4) {

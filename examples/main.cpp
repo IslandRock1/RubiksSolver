@@ -7,6 +7,7 @@
 #include <limits>
 #include <chrono>
 #include <ranges>
+#include <bitset>
 
 #include "RubiksLibrary/Lookup.hpp"
 #include "RubiksLibrary/solution.hpp"
@@ -512,32 +513,143 @@ void traverseCube(RubiksCube &cube, std::vector<Move> &moves, int depth) {
     }
 }
 
+std::string bits_to_string(__int128 x, int bits = 128, bool group_by_bytes = false) {
+    if (bits <= 0) return {};
+    if (bits > 128) bits = 128;
+
+    uint64_t low  = static_cast<uint64_t>(x);
+    uint64_t high = static_cast<uint64_t>(x >> 64);
+
+    // bitset produces "MSB..LSB" for each 64-bit chunk
+    std::string full = std::bitset<64>(high).to_string() + std::bitset<64>(low).to_string();
+    // We want the top 'bits' starting from the MSB side:
+    std::string sub = full.substr(128 - bits);
+
+    if (!group_by_bytes) return sub;
+
+    // Insert spaces every 8 bits for readability
+    std::string grouped;
+    for (size_t i = 0; i < sub.size(); ++i) {
+        grouped.push_back(sub[i]);
+        if ((i + 1) % 8 == 0 && (i + 1) != sub.size()) grouped.push_back(' ');
+    }
+    return grouped;
+}
+
+void print_bits(__int128 x, int bits = 128, bool group_by_bytes = true) {
+    std::cout << bits_to_string(x, bits, group_by_bytes) << '\n';
+}
+
+void print_u128(__int128 x) {
+    if (x == 0) {
+        std::cout << 0;
+        return;
+    }
+    std::string s;
+    while (x > 0) {
+        s.push_back('0' + (x % 10));
+        x /= 10;
+    }
+    std::reverse(s.begin(), s.end());
+    std::cout << s << "\n";
+}
+
 int main() {
 
     /*
 
     ################ README! ########################
 
-    For speedup, you can use a set of the hash values (uint64_t).
-    That way, checking if this hash is in the table will be a lot faster,
-    then you can use the map only when wanting to get the actual moves.
-
-    The moves have been compressed to an uint32_t, so that's great!
-    With some luck the keys may be able to be mapped to an uint32_t,
-    but seems unlikely, unfortunately.
+    Going for a new hashing method. Currently a decoder has been made, as well as
+    a initializer of some sort. Next step is probably to make it so turns will
+    update the hash. Lets goooo!
 
      */
 
-    for (int depth = 0; depth < 10; depth++) {
-        RubiksCube cube;
-        std::vector<Move> moves;
+    RubiksCube cube;
+    auto physical = RubiksConst::physicalPieces;
 
-        auto t0 = std::chrono::high_resolution_clock::now();
-        traverseCube(cube, moves, depth);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-        std::cout << "For a depth of " << depth << ", time used is: " << duration << "ms.\n";
+    // Hash is posision of the white edges, connected to green, red, orange, blue.
+    // Then the edges corrosponding to RED and green, RED and blue, BLUE and orange, ORANGE and green.
+    // Then YELLOW and blue, YELLOW and red, YELLOW and orange, YELLOW and green
+
+    // Then corners WHITE, red, green | WHITE, green, orange | WHITE, blue, red | WHITE, orange, blue
+    // YELLOW, red, blue | YELLOW, blue, orange | YELLOW, green, red | YELLOW, orange, green
+
+
+    print_u128(cube.hash);
+    print_bits(cube.hash);
+
+    // Convert back
+    std::array positions = {1, 3, 4, 6, 9, 14, 20, 33, 25, 27, 28, 30, 0, 2, 5, 7, 24, 26, 29, 31};
+    std::array reverseds = {31, 29, 26, 24, 7, 5, 2, 0, 30, 28, 27, 25, 33, 20, 14, 9, 6, 4, 3, 1};
+
+    std::array<std::vector<int>, 48> colors = {
+        {
+            // Begin Corners
+            {5, 4, 3},
+            {5, 3, 1},
+            {5, 2, 4},
+            {5, 1, 2},
+            {0, 4, 2},
+            {0, 2, 1},
+            {0, 3, 4},
+            {0, 1, 3},
+            // End Corners
+            // Start Edges
+            {5, 3},
+            {5, 4},
+            {5, 1},
+            {5, 2},
+
+            {4, 3},
+            {2, 4},
+            {1, 2},
+            {1, 3},
+
+            {0, 2},
+            {0, 4},
+            {0, 1},
+            {0, 3}
+        }
+    };
+
+    print_bits(cube.hash);
+    RubiksCube newCube;
+    newCube.cube = {9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9};
+
+    for (int ix = 0; ix < 20; ix++) {
+        auto Yog = static_cast<int>(cube.hash & 0b111111);
+        cube.hash >>= 6;
+        const auto& piece = physical[Yog];
+        if (piece.size() > 1) {
+            std::array<int, 3> indicises = {Yog, piece[0], piece[1]};
+            const auto& col = colors[ix];
+
+            for (int i = 0; i < 3; i++) {
+                newCube.cube[indicises[i]] = col[i];
+
+                if (newCube.cube[indicises[i]] != cube.cube[indicises[i]]) {
+                    std::cout << "Its happening on ix: " << indicises[i] << " | Ix: " << ix << "\n";
+                }
+            }
+        } else if (piece.size() == 1) {
+            std::array<int, 3> indicises = {Yog, piece[0]};
+            const auto& col = colors[ix];
+
+            for (int i = 0; i < 2; i++) {
+                newCube.cube[indicises[i]] = col[i];
+
+                if (newCube.cube[indicises[i]] != cube.cube[indicises[i]]) {
+                    std::cout << "Its happening on indicie: " << indicises[i] << " | Ix: " << ix << "\n";
+                }
+            }
+        }
     }
+
+    cube.print();
+    newCube.print();
+
 
     // auto lookup = Lookup::loadAllMaps().crossAnd2Corners;
     // std::vector<uint64_t> arrayBase;
