@@ -6,8 +6,10 @@
 #include <random>
 #include <limits>
 #include <chrono>
+#include <ranges>
 
 #include "RubiksLibrary/Lookup.hpp"
+#include "RubiksLibrary/solution.hpp"
 
 /*
 
@@ -100,7 +102,29 @@ uint64_t magicNum(uint64_t num, uint64_t magicNum, uint64_t reduceSize) {
     return (num * magicNum) >> reduceSize;
 }
 
-uint64_t hashF(const std::array<unsigned int, 4> &num, uint32_t seed = 0) {
+inline uint64_t mix64(uint64_t x) {
+    x ^= x >> 30;
+    x *= 0xbf58476d1ce4e5b9ULL;
+    x ^= x >> 27;
+    x *= 0x94d049bb133111ebULL;
+    x ^= x >> 31;
+    return x;
+}
+
+uint64_t hashArraySeeded(const std::array<unsigned int, 4>& arr, uint64_t seed) {
+    uint64_t h = seed;
+
+    for (const unsigned int x : arr) {
+        const auto v = static_cast<uint64_t>(x);
+        h ^= mix64(v + seed);   // mix with seed
+        h *= 0x9e3779b97f4a7c15ULL; // large odd constant (golden ratio)
+        h ^= h >> 32;
+    }
+
+    return mix64(h);
+}
+
+uint64_t hashF(const std::array<unsigned int, 4> &num, uint64_t seed = 0) {
     uint64_t hash_value = 0x811C9DC5 ^ seed; // FNV offset basis XOR seed
 
     std::string actualString;
@@ -194,7 +218,7 @@ void findBestMagicNumber(const std::vector<uint64_t>& arrayBase) {
     std::mt19937 gen(rd());
     std::uniform_int_distribution<uint64_t> dist(1, std::numeric_limits<uint64_t>::max());
 
-    int sizeToReduce = 17;
+    int sizeToReduce = 32;
     int bestIx = 0;
     int numTries = 0;
 
@@ -342,17 +366,150 @@ void testSmallerTable(std::map<std::array<unsigned int, 4>, std::vector<char>> &
 
 }
 
-void testNumDifferentMoveSquences(std::map<std::array<unsigned int, 4>, std::vector<char>> &table) {
-    std::unordered_set<uint32_t> moveNumSet;
-
-    for (const auto &[key, val] : table) {
-
-        auto moveVal = hashMoves(val);
-        moveNumSet.insert(moveVal);
+unsigned int create_int_main(const std::string &str) {
+    unsigned int i = 0;
+    for (const auto c : str) {
+        i *= 10;
+        i += c - '0';
     }
 
-    auto numEntries = moveNumSet.size();
-    std::cout << "Num entries for number: " << numEntries << ".\n";
+    return i;
+}
+
+void convertCornerAndThree() {
+    Lookup lookup;
+    std::string titleBase = DATA_PATH;
+    std::string title = titleBase + "/crossAnd3Corners7.txt";
+    std::set<uint64_t> setBase;
+    Lookup::load(lookup.crossAnd3Corners, title);
+
+    std::ifstream file(title);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not find the specified lookuptable.");
+    }
+
+    std::string text;
+    uint64_t seed = 324598623562517;
+    int numLines = 0;
+    int maxLines = 0;
+
+    bool succy = true;
+    while (true) {
+        for (auto &key : lookup.crossAnd3Corners | std::views::keys) {
+            auto newKey = hashArraySeeded(key, seed);
+            if (setBase.contains(newKey)) {
+                // std::cout << "\nNot working.. trying new seed." << "\n";
+                std::mt19937_64 rng(12345); // or std::random_device{}() for non-deterministic seed
+                seed = rng();
+                numLines = 0;
+                succy = false;
+                setBase = {};
+                break;
+            }
+
+            setBase.emplace(newKey);
+            numLines++;
+            maxLines = std::max(maxLines, numLines);
+
+            if (numLines % 10000 == 0) {
+                std::cout << "Max lines: " << maxLines << " | Line num: " << numLines << "\r";
+            }
+        }
+
+        if (succy) {
+            std::cout << "\nGot it working with seed: " << seed << ". Yippy!\n";
+            break;
+        }
+    }
+
+    file.close();
+}
+
+void testHashHugeMap() {
+    std::cout << "Starting.." << "\n";
+    Lookup lookup;
+    std::string titleBase = DATA_PATH;
+    std::string title = titleBase + "/crossAnd2CornersDepth8LookupOnly.txt";
+    std::set<uint64_t> setBase;
+
+    std::ifstream file(title);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not find the specified lookuptable.");
+    }
+
+    std::string text;
+    uint64_t seed = 324598623562517;
+    bool succsess = true;
+    int numLines = 0;
+    int maxLines = 0;
+
+    while (true) {
+        while (std::getline(file, text)) {
+            std::array<unsigned int, 4> key = {0, 0, 0, 0};
+
+            std::string num = text.substr(0, 12);
+            key[0] = create_int_main(num);
+            num = text.substr(12, 12);
+            key[1] = create_int_main(num);
+            num = text.substr(24, 12);
+            key[2] = create_int_main(num);
+            num = text.substr(36, 12);
+            key[3] = create_int_main(num);
+
+            auto newKey = hashArraySeeded(key, seed);
+            if (setBase.contains(newKey)) {
+                // std::cout << "\nNot working.. trying new seed." << "\n";
+                std::mt19937_64 rng(12345); // or std::random_device{}() for non-deterministic seed
+                seed = rng();
+                succsess = false;
+                file.clear();
+                file.seekg(0, std::ios::beg);
+                setBase = {};
+                numLines = 0;
+                break;
+            }
+
+            setBase.emplace(newKey);
+            numLines++;
+            maxLines = std::max(maxLines, numLines);
+            std::cout << "Max lines: " << maxLines << " | Line num: " << numLines << "\r";
+        }
+
+        if (succsess) {
+            std::cout << "\nGot it working with seed: " << seed << ". Yippy!\n";
+            break;
+        }
+    }
+
+    file.close();
+}
+
+void traverseCube(RubiksCube &cube, std::vector<Move> &moves, int depth) {
+    if (depth == 0) {return;}
+    auto size = moves.size();
+
+    Move prevMove {7, 7};
+    Move doublePrevMove {7, 7};
+
+    if (size > 1) {
+        prevMove = moves[size - 1];
+        doublePrevMove = moves[size - 2];
+    } else if (size > 0) {
+        prevMove = moves[size - 1];
+    }
+
+    for (Move m : RubiksConst::everyMove)
+    {
+        if (Lookup::prune(m, prevMove, doublePrevMove)) { continue;}
+
+        moves.push_back(m);
+        cube.turn(m);
+
+        traverseCube(cube, moves, depth - 1);
+
+        cube.turn(m.face, 4 - m.rotations);
+        moves.pop_back();
+    }
 }
 
 int main() {
@@ -371,53 +528,29 @@ int main() {
 
      */
 
+    for (int depth = 0; depth < 10; depth++) {
+        RubiksCube cube;
+        std::vector<Move> moves;
 
-
-
-    RubiksCube cube;
-    Move m = Move(0, 1);
-    int numMoves = 50 * 1000 * 1000;
-    auto start = std::chrono::high_resolution_clock::now();
-    std::cout << "Turning\n";
-
-    for (int i = 0; i < numMoves; i++) {
-        cube.turn(m);
+        auto t0 = std::chrono::high_resolution_clock::now();
+        traverseCube(cube, moves, depth);
+        auto t1 = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+        std::cout << "For a depth of " << depth << ", time used is: " << duration << "ms.\n";
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
-    auto durLookup = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Did " << numMoves << " moves in " << static_cast<double>(durLookup.count()) / 1000.0 / 1000.0 << " seconds." << "\n";
-
-    return 1;
-
-    Lookup lookupNew;
-
-    std::cout << "Starting depth: " << 8 << "\n";
-    lookupNew.makeCrossAnd3Corners(8);
-
-    return 69;
-
-    auto lookup = Lookup::loadAllMaps().crossAnd2Corners;
-    testSmallerTable(lookup);
-    return 0;
-
-    // testNumDifferentMoveSquences(lookup);
+    // auto lookup = Lookup::loadAllMaps().crossAnd2Corners;
+    // std::vector<uint64_t> arrayBase;
+    // for (const auto& key : lookup | std::views::keys) {
+    //     auto newKey = hashF(key, 321464301);
+    //     arrayBase.emplace_back(newKey);
+    // }
+    //
+    // // All times in IDE, faster (?) from terminal.
+    // // V0 time: 105270 ms
+    // // V1 time:  76356 ms # Using an array for keys
+    // // V2 time:  19335 ms # Using a set to store seen values
+    //
+    // findBestMagicNumber(arrayBase);
     // return 1;
-
-    Lookup::getSize(lookup);
-
-    std::vector<uint64_t> arrayBase;
-
-    for (const auto& [key, vec] : lookup) {
-        auto newKey = hashF(key, 321464301);
-        arrayBase.emplace_back(newKey);
-    }
-
-    // All times in IDE, faster from terminal.
-    // V0 time: 105270 ms
-    // V1 time:  76356 ms # Using an array for keys
-    // V2 time:  19335 ms # Using a set to store seen values
-
-    findBestMagicNumber(arrayBase);
-    return 1;
 }
