@@ -527,11 +527,11 @@ std::string bits_to_string(__int128 x, int bits = 128, bool group_by_bytes = fal
 
     if (!group_by_bytes) return sub;
 
-    // Insert spaces every 8 bits for readability
+    // Insert spaces every 6 bits for readability
     std::string grouped;
     for (size_t i = 0; i < sub.size(); ++i) {
         grouped.push_back(sub[i]);
-        if ((i + 1) % 8 == 0 && (i + 1) != sub.size()) grouped.push_back(' ');
+        if ((i + 5) % 6 == 0 && (i + 5) != sub.size()) grouped.push_back(' ');
     }
     return grouped;
 }
@@ -585,15 +585,15 @@ int main() {
     //Indicies: 1, 3, 4, 6, 9, 14, 20, 33, 25, 27, 28, 30, 0, 2, 5, 7, 24, 26, 29, 31
 
 
-    print_u128(cube.hash);
-    print_bits(cube.hash);
+    //print_u128(cube.hash);
+    //print_bits(cube.hash);
 
-    // Convert back
-    std::array positions = {1, 3, 4, 6, 9, 14, 20, 33, 25, 27, 28, 30, 0, 2, 5, 7, 24, 26, 29, 31};
-    std::array reverseds = {31, 29, 26, 24, 7, 5, 2, 0, 30, 28, 27, 25, 33, 20, 14, 9, 6, 4, 3, 1};
-
-
-
+    cube.turn(1, 1);
+    cube.hashNew();
+    auto out = cube.getCubeFromHash();
+    RubiksCube::print(out);
+    RubiksCube::print(cube.cube);
+    std::cout << "Is correct? " << (out == cube.cube) << "\n";
     print_bits(cube.hash);
 
 

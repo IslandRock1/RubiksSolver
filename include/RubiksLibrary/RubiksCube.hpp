@@ -118,6 +118,7 @@ public:
 
     RubiksCube();
     void print();
+    static void print(const std::array<short, 48>& cube);
 
     bool solvedWhiteCross();
     int numCornerSolved();
