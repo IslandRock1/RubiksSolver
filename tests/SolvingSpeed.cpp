@@ -66,6 +66,7 @@ void testHashingSpeed() {
 
 	// v0: Total time for 1000000 hashes: 2094ms | Avg time: 2.09411us
 	// v1: Total time for 1000000 hashes:  216ms | Avg time: 0.216571us
+	// v2: Total time for 1000000 hashes:  181ms | Avg time: 0.181339us (Old hash)
 }
 
 void testNumSolvingMoves() {
@@ -148,10 +149,30 @@ void testSolving3Corners() {
 	<< "\n";
 }
 
+void testMoveSpeed() {
+	RubiksCube cube;
+	const unsigned long long numCycles = 1 * MILLION;
+	const unsigned long long numMoves = numCycles * RubiksConst::everyMove.size();
+
+	const auto t0 = std::chrono::high_resolution_clock::now();
+	for (const auto m : RubiksConst::everyMove) {
+		for (int i = 0; i < numCycles; i++) {
+			cube.turn(m);
+		}
+	}
+	const auto t1 = std::chrono::high_resolution_clock::now();
+	const auto totTime = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+	std::cout << "Total time for " << numMoves << " moves: " << totTime / 1000 << "ms | Avg time: " << static_cast<double>(totTime) / static_cast<double>(numMoves)
+	<< "us\n";
+
+	// Total time for 18000000 moves: 137ms | Avg time: 0.00762217us (Old, without hashing)
+}
+
 int main() {
 	// confirmSameResult();
-	// testHashingSpeed();
+	testHashingSpeed();
+	testMoveSpeed();
 
 	// testNumSolvingMoves();
-	testSolving3Corners();
+	// testSolving3Corners();
 }

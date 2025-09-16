@@ -564,6 +564,12 @@ int main() {
     a initializer of some sort. Next step is probably to make it so turns will
     update the hash. Lets goooo!
 
+    Should test both hashing as the moves are done, as well as creating the hash afterwards.
+    The afterwards hash can use the cube as the starting point, and then fill in the hash
+    rather than using the hash and searching for the pieces.
+
+    Example => Instead of searching for the red and white edge, i pick the
+    1/46 edge, find out what colors it is, then place it in the hash.
      */
 
     RubiksCube cube;
@@ -576,6 +582,8 @@ int main() {
     // Then corners WHITE, red, green | WHITE, green, orange | WHITE, blue, red | WHITE, orange, blue
     // YELLOW, red, blue | YELLOW, blue, orange | YELLOW, green, red | YELLOW, orange, green
 
+    //Indicies: 1, 3, 4, 6, 9, 14, 20, 33, 25, 27, 28, 30, 0, 2, 5, 7, 24, 26, 29, 31
+
 
     print_u128(cube.hash);
     print_bits(cube.hash);
@@ -584,71 +592,11 @@ int main() {
     std::array positions = {1, 3, 4, 6, 9, 14, 20, 33, 25, 27, 28, 30, 0, 2, 5, 7, 24, 26, 29, 31};
     std::array reverseds = {31, 29, 26, 24, 7, 5, 2, 0, 30, 28, 27, 25, 33, 20, 14, 9, 6, 4, 3, 1};
 
-    std::array<std::vector<int>, 48> colors = {
-        {
-            // Begin Corners
-            {5, 4, 3},
-            {5, 3, 1},
-            {5, 2, 4},
-            {5, 1, 2},
-            {0, 4, 2},
-            {0, 2, 1},
-            {0, 3, 4},
-            {0, 1, 3},
-            // End Corners
-            // Start Edges
-            {5, 3},
-            {5, 4},
-            {5, 1},
-            {5, 2},
 
-            {4, 3},
-            {2, 4},
-            {1, 2},
-            {1, 3},
-
-            {0, 2},
-            {0, 4},
-            {0, 1},
-            {0, 3}
-        }
-    };
 
     print_bits(cube.hash);
-    RubiksCube newCube;
-    newCube.cube = {9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9};
 
-    for (int ix = 0; ix < 20; ix++) {
-        auto Yog = static_cast<int>(cube.hash & 0b111111);
-        cube.hash >>= 6;
-        const auto& piece = physical[Yog];
-        if (piece.size() > 1) {
-            std::array<int, 3> indicises = {Yog, piece[0], piece[1]};
-            const auto& col = colors[ix];
 
-            for (int i = 0; i < 3; i++) {
-                newCube.cube[indicises[i]] = col[i];
-
-                if (newCube.cube[indicises[i]] != cube.cube[indicises[i]]) {
-                    std::cout << "Its happening on ix: " << indicises[i] << " | Ix: " << ix << "\n";
-                }
-            }
-        } else if (piece.size() == 1) {
-            std::array<int, 3> indicises = {Yog, piece[0]};
-            const auto& col = colors[ix];
-
-            for (int i = 0; i < 2; i++) {
-                newCube.cube[indicises[i]] = col[i];
-
-                if (newCube.cube[indicises[i]] != cube.cube[indicises[i]]) {
-                    std::cout << "Its happening on indicie: " << indicises[i] << " | Ix: " << ix << "\n";
-                }
-            }
-        }
-    }
-
-    cube.print();
-    newCube.print();
 
 
     // auto lookup = Lookup::loadAllMaps().crossAnd2Corners;

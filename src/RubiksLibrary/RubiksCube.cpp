@@ -6,6 +6,8 @@
 
 #include "RubiksLibrary/RubiksCube.hpp"
 
+#include <unordered_map>
+
 std::array<Move, 18> RubiksConst::everyMove = {
         Move('A'), Move('B'), Move('C'), Move('D'), Move('E'), Move('F'),
         Move('G'), Move('H'), Move('I'), Move('J'), Move('K'), Move('L'),
@@ -20,6 +22,86 @@ RubiksCube::RubiksCube() {
         hash <<= 6;
         hash += p;
     }
+}
+
+std::array<short, 48> RubiksCube::getCubeFromHash() {
+    auto physical = RubiksConst::physicalPieces;
+    auto colors = RubiksConst::colors;
+
+    std::array<short, 48> cubeLoc = {9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9};
+
+    for (int ix = 0; ix < 20; ix++) {
+        auto Yog = static_cast<int>(hash & 0b111111);
+        hash >>= 6;
+        const auto& piece = physical[Yog];
+        if (piece.size() > 1) {
+            std::array<int, 3> indicises = {Yog, piece[0], piece[1]};
+            const auto& col = colors[ix];
+
+            for (int i = 0; i < 3; i++) {
+                cubeLoc[indicises[i]] = col[i];
+            }
+        } else if (piece.size() == 1) {
+            std::array<int, 3> indicises = {Yog, piece[0]};
+            const auto& col = colors[ix];
+
+            for (int i = 0; i < 2; i++) {
+                cubeLoc[indicises[i]] = col[i];
+            }
+        }
+    }
+
+    return cubeLoc;
+}
+
+void RubiksCube::hashNew() {
+    // Hash is posision of the white edges, connected to green, red, orange, blue.
+    // Then the edges corrosponding to RED and green, RED and blue, BLUE and orange, ORANGE and green.
+    // Then YELLOW and blue, YELLOW and red, YELLOW and orange, YELLOW and green
+
+    // Then corners WHITE, red, green | WHITE, green, orange | WHITE, blue, red | WHITE, orange, blue
+    // YELLOW, red, blue | YELLOW, blue, orange | YELLOW, green, red | YELLOW, orange, green
+
+    //Indicies: 1, 3, 4, 6, 9, 14, 20, 33, 25, 27, 28, 30, 0, 2, 5, 7, 24, 26, 29, 31
+
+    std::unordered_map<int, int> colorComboLookup {
+        {137, 0}, // YELLOW, orange, green => green * 36 + orange * 6 + yellow (smallest value first) | BitPosition 0
+            {59, 6}, // YELLOW, green, red | BitPosition 6, aka 0bHEREXXXXXX (x is irrelevant)
+        {101, 12}, // YELLOW, blue, orange
+        {53, 18}
+
+        // TODO: finish this lookup!!
+    };
+
+    auto physicalPieces = RubiksConst::physicalPieces;
+
+    hash = 0;
+    for (int i = 0; i < 48; i++) {
+        auto piece = physicalPieces[i];
+        if (piece.size() == 1) {
+            int ix = piece[0];
+            if (ix < i) {
+                continue;
+            }
+
+            // Indicies is i and ix
+            auto col0 = std::min(cube[i], cube[ix]);
+            auto col1 = std::max(cube[i], cube[ix]);
+            // col0 and col1 are the colors of the edge
+            // For example 0 and 1, aka white and red.
+
+            // The colors are between 0 and 5 (including), so if I use
+            // min * 6 + max, I can index into an array, that says where in the
+            // hash this position should be saved.
+
+            // Position given in how many bits to the right it is maybe?
+            // Then i can do like hash and = 0b111111 << position
+            // Then do hash or = cubePosition << position
+
+            auto colorCombo = col0 * 6 + col1;
+        }
+    }
+
 }
 
 

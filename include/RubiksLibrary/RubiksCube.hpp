@@ -19,6 +19,7 @@ namespace RubiksConst {
 
     constexpr std::array<int, 3> oppositeFace = {5, 4, 3};
     constexpr std::array<int, 6> oppositeFaceAll = {5, 4, 3, 2, 1, 0};
+    const std::array<short, 48> solvedCube = {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3};
 
     const std::array<std::vector<int>, 48> physicalPieces = {{
         {10, 45},        // 0
@@ -70,6 +71,36 @@ namespace RubiksConst {
         {1},         // 46
         {32, 2}  // 47
     }};
+
+    const std::array<std::vector<int>, 48> colors = {
+        {
+            // Begin Corners
+            {5, 4, 3},
+            {5, 3, 1},
+            {5, 2, 4},
+            {5, 1, 2},
+            {0, 4, 2},
+            {0, 2, 1},
+            {0, 3, 4},
+            {0, 1, 3},
+            // End Corners
+            // Start Edges
+            {5, 3},
+            {5, 4},
+            {5, 1},
+            {5, 2},
+
+            {4, 3},
+            {2, 4},
+            {1, 2},
+            {1, 3},
+
+            {0, 2},
+            {0, 4},
+            {0, 1},
+            {0, 3}
+        }
+    };
 }
 
 class RubiksCube {
@@ -77,10 +108,13 @@ public:
     //                                               10                  20                  30                  40
     //                            0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7
     std::array<short, 48> cube = {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3};
-    __int128 hash;
     void turn(int face, int rotations);
     void turn(char m);
     void turn(Move m);
+
+    __int128 hash;
+    std::array<short, 48> getCubeFromHash();
+    void hashNew();
 
     RubiksCube();
     void print();
