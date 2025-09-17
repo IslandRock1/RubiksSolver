@@ -82,8 +82,8 @@ void confirmSameResultNew() {
 	int numHashes = 1 * MILLION;
 	for (int i = 0; i < numHashes; i++) {
 		cube.shuffle(50);
-		auto h0 = cube.hashNewV0();
-		auto h1 = cube.hashNewV1();
+		auto h0 = cube.hashNewV2();
+		auto h1 = cube.hashNewV3();
 
 		if (h0 != h1) {
 			std::cout << "Invalid hash..?" << "\n";
@@ -125,7 +125,7 @@ void testNewHashingSpeed() {
 	auto now = std::chrono::high_resolution_clock::now();
 
 	for (int i = 0; i < numHashes; i++) {
-		cube.hashNewV1();
+		cube.hashNewV4();
 	}
 
 	auto after = std::chrono::high_resolution_clock::now();
@@ -133,8 +133,13 @@ void testNewHashingSpeed() {
 	std::cout << "Total time for " << numHashes << " new hashes: " << totTime / 1000 << "ms | Avg time: " << static_cast<double>(totTime) / static_cast<double>(numHashes)
 	<< "us\n";
 
-	// v0: Total time for 1000000 new hashes: 5669ms | Avg time: 5.66993us
-	// v1: Total time for 1000000 new hashes: 2058ms | Avg time: 2.05838us
+	// v0  : Total time for 1000000 new hashes: 5669ms | Avg time: 5.66993us
+	// v1  : Total time for 1000000 new hashes: 2058ms | Avg time: 2.05838us
+	// v2  : Total time for 1000000 new hashes:  182ms | Avg time: 0.182687us
+	// v3.1: Total time for 1000000 new hashes:  164ms | Avg time: 0.164211us
+	// v3.2: Total time for 1000000 new hashes:  159ms | Avg time: 0.159437us
+	// v3  : Total time for 1000000 new hashes:  159ms | Avg time: 0.159722us
+	// v4  : Total time for 1000000 new hashes:  104ms | Avg time: 0.104231us
 }
 
 void testNumSolvingMoves() {

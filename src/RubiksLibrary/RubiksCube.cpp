@@ -260,6 +260,104 @@ __int128 RubiksCube::hashNewV1() const {
     return hash;
 }
 
+__int128 RubiksCube::hashNewV2() const {
+    auto &colorComboLookupEdges = RubiksConst::colorComboLookupEdges;
+    auto &colorComboLookupCorners = RubiksConst::colorComboLookupCorners;
+    auto &physicalPieces = RubiksConst::physicalPieces;
+
+    __int128 hash = 0;
+    for (int i = 0; i < 48; i++) {
+        auto &piece = physicalPieces[i];
+        if (piece.size() == 1) {
+            int ix = piece[0];
+
+            if (cube[i] > cube[ix]) {continue;}
+
+            // Indicies is i and ix
+            auto col0 = cube[i];
+            auto col1 = cube[ix];
+
+            auto colorCombo = col0 * 6 + col1;
+            auto position = colorComboLookupEdges.at(colorCombo);
+
+            set_bits(hash, position, 6, i);
+
+        } else {
+
+            int ix0 = piece[0];
+            int ix1 = piece[1];
+
+            auto col0 = cube[i];
+            auto col1 = std::min(cube[ix0], cube[ix1]);
+            auto col2 = std::max(cube[ix0], cube[ix1]);
+
+            if (cube[i] > cube[ix0]) {continue;}
+            if (cube[i] > cube[ix1]) {continue;}
+
+            auto colorCombo = col0 * 36 + col1 * 6 + col2;
+            auto position = colorComboLookupCorners.at(colorCombo);
+
+            set_bits(hash, position, 6, i);
+        }
+    }
+    return hash;
+}
+
+__int128 RubiksCube::hashNewV3() const {
+    auto &colorComboLookupEdges = RubiksConst::colorComboLookupEdges;
+    auto &colorComboLookupCorners = RubiksConst::colorComboLookupCorners;
+    auto &physicalPieces = RubiksConst::physicalPieces;
+
+    __int128 hash = 0;
+    for (int i = 0; i < 48; i++) {
+        auto &piece = physicalPieces[i];
+        const int ix0 = piece[0];
+        if (cube[i] > cube[ix0]) {continue;}
+
+        int position;
+        if (piece.size() == 1) {
+            const auto colorCombo = cube[i] * 6 + cube[ix0];
+            position = colorComboLookupEdges.at(colorCombo);
+        } else {
+            const int ix1 = piece[1];
+            if (cube[i] > cube[ix1]) {continue;}
+
+            const auto colorCombo = cube[i] * 36 + cube[ix0] * 6 + cube[ix1];
+            position = colorComboLookupCorners.at(colorCombo);
+
+        }
+        set_bits(hash, position, 6, i);
+    }
+    return hash;
+}
+
+__int128 RubiksCube::hashNewV4() const {
+    auto &colorComboLookupEdges = RubiksConst::colorComboLookupEdgesArray;
+    auto &colorComboLookupCorners = RubiksConst::colorComboLookupCornersArray;
+    auto &physicalPieces = RubiksConst::physicalPieces;
+
+    __int128 hash = 0;
+    for (int i = 0; i < 48; i++) {
+        auto &piece = physicalPieces[i];
+        const int ix0 = piece[0];
+        if (cube[i] > cube[ix0]) {continue;}
+
+        int position;
+        if (piece.size() == 1) {
+            const auto colorCombo = cube[i] * 6 + cube[ix0];
+            position = colorComboLookupEdges[colorCombo];
+        } else {
+            const int ix1 = piece[1];
+            if (cube[i] > cube[ix1]) {continue;}
+
+            const auto colorCombo = cube[i] * 36 + cube[ix0] * 6 + cube[ix1];
+            position = colorComboLookupCorners[colorCombo];
+
+        }
+        set_bits(hash, position, 6, i);
+    }
+    return hash;
+}
 
 unsigned short RubiksCube::convertBase5ToBin(int a, int b, int c) {
     return a * 36 + b * 6 + c;

@@ -103,6 +103,7 @@ namespace RubiksConst {
         }
     };
 
+    const std::array<int, 30> colorComboLookupEdgesArray = {0, 108, 96, 114, 102, 0, 0, 0, 84, 90, 0, 60, 0, 0, 0, 0, 78, 66, 0, 0, 0, 0, 72, 48, 0, 0, 0, 0, 0, 54};
     const std::unordered_map<int, int> colorComboLookupEdges {
             {23,  48}, // YELLOW, green
             {29,  54}, // YELLOW, orange
@@ -120,6 +121,23 @@ namespace RubiksConst {
             { 3, 114}
     };
 
+    const std::array<int, 150> colorComboLookupCornersArray = {
+        0, 0, 0, 0, 0, 0, 0, 0, 30, 42,      //  0-  9
+        0, 0, 0, 30, 0, 0, 24, 0, 0, 42,     //  10- 19
+        0, 0, 36, 0, 0, 0, 24, 36, 0, 0,     //  20- 29
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  30- 39
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  40- 49
+        0, 0, 0, 18, 0, 0, 0, 0, 0, 6,        //  50- 59
+        0, 0, 0, 0, 0, 0, 0, 0, 18, 6,        //  60- 69
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  70- 79
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  80- 89
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  90- 99
+        0, 12, 0, 0, 0, 0, 12, 0, 0, 0,        // 100-109
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        // 110-119
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        // 120-129
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        // 130-139
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        // 140-149
+    };
     const std::unordered_map<int, int> colorComboLookupCorners {
             {137,  0}, // YELLOW, orange, green => green * 36 + orange * 6 + yellow (smallest value first) | BitPosition 0
             { 59,  6}, // yellow, green, RED | BitPosition 6, aka 0bHEREXXXXXX (x is irrelevant)
@@ -130,6 +148,16 @@ namespace RubiksConst {
             {  8, 30}, // WHITE, blue, red
             { 22, 36}, // WHITE, green, orange
             {  9, 42}, // WHITE, red, green
+
+                // By adding in col0 * 36 + col2 * 6 + col1, i can drop the max and min functions in the hash
+            { 26, 24},
+            { 69,  6},
+            { 13, 30},
+            {106, 12},
+            { 19, 42},
+            { 68, 18},
+            { 27, 36},
+            {142,  0}
         };
 }
 
@@ -145,7 +173,9 @@ public:
     static std::array<short, 48> getCubeFromHash(__int128 hash);
     __int128 hashNewV0() const;
     __int128 hashNewV1() const;
-    __int128 hashNewV2() const; // TODO: optimize hash
+    __int128 hashNewV2() const;
+    __int128 hashNewV3() const;
+    __int128 hashNewV4() const;
 
     void print();
     static void print(const std::array<short, 48>& cube);
