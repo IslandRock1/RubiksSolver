@@ -15,44 +15,61 @@ std::array<Move, 18> RubiksConst::everyMove = {
         Move('M'), Move('N'), Move('O'), Move('P'), Move('Q'), Move('R')
 };
 
-RubiksCube::RubiksCube() {
-    std::array positions = {1, 3, 4, 6, 9, 14, 20, 33, 25, 27, 28, 30, 0, 2, 5, 7, 24, 26, 29, 31};
-
-    hash = 0;
-    for (const auto p : positions) {
-        hash <<= 6;
-        hash += p;
-    }
-}
-
-std::array<short, 48> RubiksCube::getCubeFromHash() {
+std::array<short, 48> RubiksCube::getCubeFromHash(__int128 hash) {
     auto physical = RubiksConst::physicalPieces;
     auto colors = RubiksConst::colors;
 
     std::array<short, 48> cubeLoc = {9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9};
 
-    auto hashCopy = hash;
-    for (int ix = 0; ix < 20; ix++) {
-        auto Yog = static_cast<int>(hashCopy & 0b111111);
-        hashCopy >>= 6;
-        const auto& piece = physical[Yog];
-        if (piece.size() > 1) {
-            std::array<int, 3> indicises = {Yog, piece[0], piece[1]};
-            const auto& col = colors[ix];
+    // Hash is posision of the white edges, connected to green, red, orange, blue.
+    // Then the edges corrosponding to RED and green, RED and blue, BLUE and orange, orange and GREEN.
+    // Then yellow and BLUE, yellow and RED, yellow and ORANGE, yellow and GREEN
 
-            for (int i = 0; i < 3; i++) {
-                cubeLoc[indicises[i]] = col[i];
-            }
-        } else if (piece.size() == 1) {
-            std::array<int, 3> indicises = {Yog, piece[0]};
-            const auto& col = colors[ix];
+    // Then corners WHITE, red, green | WHITE, green, orange | WHITE, blue, red | WHITE, orange, blue
+    // yellow, RED, blue | yellow, BLUE, orange | yellow, green, RED | yellow, orange, GREEN
 
-            for (int i = 0; i < 2; i++) {
-                cubeLoc[indicises[i]] = col[i];
-            }
+    std::unordered_map<int, std::vector<int>> indexToPiece {
+        { 0, {42, 3, 5, 4}}, // green, yellow, orange
+        { 1,  {8, 1, 5, 3}}, // red, yellow, green
+        { 2, {23, 2, 4, 5}}, // blue, orange, yellow
+        { 3, {13, 1, 2, 5}}, // red, blue, yellow
+        { 4, { 7, 0, 4, 2}}, // white, orange, blue
+        { 5, { 5, 0, 2, 1}}, // white, blue, red
+        { 6, { 2, 0, 3, 4}}, // white, green, orange
+        { 7, { 0, 0, 1, 3}}, // white, red, green
+        { 8, {41, 3, 5}}, // green, yellow
+        { 9, {36, 4, 5}}, // orange, yellow
+        {10, {11, 1, 5}}, // red, yellow
+        {11, {22, 2, 5}}, // blue, yellow
+        {12, {44, 3, 4}}, // green, orange
+        {13, {20, 2, 4}}, // blue, orange
+        {14, {14, 1, 2}}, // red, blue
+        {15, { 9, 1, 3}}, // red, green
+        {16, { 6, 0, 2}}, // white, blue
+        {17, { 4, 0, 4}}, // white, orange
+        {18, { 3, 0, 1}}, // white, red
+        {19, { 1, 0, 3}}  // white, green
+    };
+
+    for (int i = 0; i < 20; i++) {
+        auto posInCube = static_cast<int>(hash & 0b111111);
+        hash >>= 6;
+
+        auto value = indexToPiece.at(i);
+        auto indexInPhysical = value.at(0);
+        auto pieces = physical.at(posInCube);
+        cubeLoc.at(posInCube) = value.at(1);
+
+        cubeLoc.at(pieces.at(0)) = value.at(2);
+        if (pieces.size() == 2) {
+            cubeLoc.at(pieces.at(1)) = value.at(3);
         }
-    }
 
+        // if (i < 3) {
+        //     std::cout << "I: " << i << "\n";
+        //     print(cubeLoc);
+        // }
+    }
     return cubeLoc;
 }
 
@@ -88,18 +105,15 @@ inline void set_bits(__int128 &x, const unsigned pos, const unsigned width, cons
     x = (x & ~mask) | ((static_cast<__int128>(value) << pos) & mask);
 }
 
-void RubiksCube::hashNew() {
+__int128 RubiksCube::hashNewV0() const {
     // Hash is posision of the white edges, connected to green, red, orange, blue.
-    // Then the edges corrosponding to RED and green, RED and blue, BLUE and orange, ORANGE and green.
+    // Then the edges corrosponding to RED and green, RED and blue, BLUE and orange, orange and GREEN.
     // Then yellow and BLUE, yellow and RED, YELLOW and orange, YELLOW and green
 
     // Then corners WHITE, red, green | WHITE, green, orange | WHITE, blue, red | WHITE, orange, blue
     // yellow, RED, blue | yellow, BLUE, orange | yellow, green, RED | YELLOW, orange, green
 
     //Indicies: 1, 3, 4, 6, 9, 14, 20, 33, 25, 27, 28, 30, 0, 2, 5, 7, 24, 26, 29, 31
-
-
-    // TODO: hash is not working, so fix it!
 
     std::unordered_map<int, int> colorComboLookupEdges {
         {23,  48}, // YELLOW, green
@@ -132,8 +146,7 @@ void RubiksCube::hashNew() {
 
     auto physicalPieces = RubiksConst::physicalPieces;
 
-    auto prevHash = hash;
-    hash = 0;
+    __int128 hash = 0;
     for (int i = 0; i < 48; i++) {
         auto piece = physicalPieces[i];
         if (piece.size() == 1) {
@@ -142,8 +155,8 @@ void RubiksCube::hashNew() {
             if (cube[i] > cube[ix]) {continue;}
 
             // Indicies is i and ix
-            auto col0 = std::min(cube[i], cube[ix]);
-            auto col1 = std::max(cube[i], cube[ix]);
+            auto col0 = cube[i];
+            auto col1 = cube[ix];
             // col0 and col1 are the colors of the edge
             // For example 0 and 1, aka white and red.
 
@@ -160,31 +173,24 @@ void RubiksCube::hashNew() {
 
             set_bits(hash, position, 6, i);
 
-            std::cout << "--EDGE-- Position: " << position << " ----- Value: " << i << " --------------\n";
-            print_bits_loc(prevHash);
-            print_bits_loc(hash);
+            // std::cout << "--EDGE-- Position: " << position << " ----- Value: " << i << " --------------\n";
+            // print_bits_loc(prevHash);
+            // print_bits_loc(hash);
 
         } else {
 
             int ix0 = piece[0];
             int ix1 = piece[1];
 
-            if (cube[0] > cube[ix0]) {continue;}
-            if (cube[0] > cube[ix1]) {continue;}
-            if (cube[ix0] > cube[ix1]) {continue;}
+            auto col0 = cube[i];
+            auto col1 = std::min(cube[ix0], cube[ix1]);
+            auto col2 = std::max(cube[ix0], cube[ix1]);
+
+            if (cube[i] > cube[ix0]) {continue;}
+            if (cube[i] > cube[ix1]) {continue;}
 
             // Indicies is i and ix
-            auto col0 = std::min(cube[i], std::min(cube[ix0], cube[ix1]));
-            auto col2 = std::max(cube[i], std::max(cube[ix0], cube[ix1]));
 
-            short col1;
-            if ((col0 < cube[i]) and (col2 > cube[i])) {
-                col1 = cube[i];
-            } else if ((col0 < cube[ix0]) and (col2 > cube[ix0])) {
-                col1 = cube[ix0];
-            } else {
-                col1 = cube[ix1];
-            }
 
             // col0 and col1 are the colors of the edge
             // For example 0 and 1, aka white and red.
@@ -202,11 +208,56 @@ void RubiksCube::hashNew() {
 
             set_bits(hash, position, 6, i);
 
-            std::cout << "--CORNER-- Position: " << position << " ----- Value: " << i << " --------------\n";
-            print_bits_loc(prevHash);
-            print_bits_loc(hash);
+            // std::cout << "--CORNER-- Position: " << position << " ----- Value: " << i << " --------------\n";
+            // print_bits_loc(prevHash);
+            // print_bits_loc(hash);
         }
     }
+    return hash;
+}
+
+__int128 RubiksCube::hashNewV1() const {
+
+    auto &colorComboLookupEdges = RubiksConst::colorComboLookupEdges;
+    auto &colorComboLookupCorners = RubiksConst::colorComboLookupCorners;
+    auto &physicalPieces = RubiksConst::physicalPieces;
+
+    __int128 hash = 0;
+    for (int i = 0; i < 48; i++) {
+        auto piece = physicalPieces[i];
+        if (piece.size() == 1) {
+            int ix = piece[0];
+
+            if (cube[i] > cube[ix]) {continue;}
+
+            // Indicies is i and ix
+            auto col0 = cube[i];
+            auto col1 = cube[ix];
+
+            auto colorCombo = col0 * 6 + col1;
+            auto position = colorComboLookupEdges.at(colorCombo);
+
+            set_bits(hash, position, 6, i);
+
+        } else {
+
+            int ix0 = piece[0];
+            int ix1 = piece[1];
+
+            auto col0 = cube[i];
+            auto col1 = std::min(cube[ix0], cube[ix1]);
+            auto col2 = std::max(cube[ix0], cube[ix1]);
+
+            if (cube[i] > cube[ix0]) {continue;}
+            if (cube[i] > cube[ix1]) {continue;}
+
+            auto colorCombo = col0 * 36 + col1 * 6 + col2;
+            auto position = colorComboLookupCorners.at(colorCombo);
+
+            set_bits(hash, position, 6, i);
+        }
+    }
+    return hash;
 }
 
 

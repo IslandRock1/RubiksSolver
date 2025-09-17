@@ -588,13 +588,14 @@ int main() {
     //print_u128(cube.hash);
     //print_bits(cube.hash);
 
-    cube.turn(1, 1);
-    cube.hashNew();
-    auto out = cube.getCubeFromHash();
-    RubiksCube::print(out);
+    cube.turn(1, 2);
+    cube.shuffle(50);
+    auto hash = cube.hashNewV0();
     RubiksCube::print(cube.cube);
+    const auto out = cube.getCubeFromHash(hash);
+    RubiksCube::print(out);
     std::cout << "Is correct? " << (out == cube.cube) << "\n";
-    print_bits(cube.hash);
+    print_bits(hash);
 
 
 

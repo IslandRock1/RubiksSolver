@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <bitset>
 
 #include "RubiksLibrary/Solver.hpp"
 #include "RubiksLibrary/Lookup.hpp"
@@ -30,6 +31,33 @@ uint64_t hashArraySeeded(const std::array<unsigned int, 4>& arr, uint64_t seed) 
 	return mix64(h);
 }
 
+std::string bits_to_string_loc_solvingspeed(__int128 x, int bits = 128, bool group_by_bytes = false) {
+	if (bits <= 0) return {};
+	if (bits > 128) bits = 128;
+
+	uint64_t low  = static_cast<uint64_t>(x);
+	uint64_t high = static_cast<uint64_t>(x >> 64);
+
+	// bitset produces "MSB..LSB" for each 64-bit chunk
+	std::string full = std::bitset<64>(high).to_string() + std::bitset<64>(low).to_string();
+	// We want the top 'bits' starting from the MSB side:
+	std::string sub = full.substr(128 - bits);
+
+	if (!group_by_bytes) return sub;
+
+	// Insert spaces every 6 bits for readability
+	std::string grouped;
+	for (size_t i = 0; i < sub.size(); ++i) {
+		grouped.push_back(sub[i]);
+		if ((i + 5) % 6 == 0 && (i + 5) != sub.size()) grouped.push_back(' ');
+	}
+	return grouped;
+}
+
+void print_bits_loc_solvingspeed(__int128 x, int bits = 128, bool group_by_bytes = true) {
+	std::cout << bits_to_string_loc_solvingspeed(x, bits, group_by_bytes) << '\n';
+}
+
 void confirmSameResult() {
 	RubiksCube cube;
 
@@ -41,6 +69,26 @@ void confirmSameResult() {
 
 		if (h0 != h1) {
 			std::cout << "Invalid hash..?" << "\n";
+			return;
+		}
+	}
+
+	std::cout << "For " << numHashes << " hashes, the functions are equal." << "\n";
+}
+
+void confirmSameResultNew() {
+	RubiksCube cube;
+
+	int numHashes = 1 * MILLION;
+	for (int i = 0; i < numHashes; i++) {
+		cube.shuffle(50);
+		auto h0 = cube.hashNewV0();
+		auto h1 = cube.hashNewV1();
+
+		if (h0 != h1) {
+			std::cout << "Invalid hash..?" << "\n";
+			print_bits_loc_solvingspeed(h0);
+			print_bits_loc_solvingspeed(h1);
 			return;
 		}
 	}
@@ -67,6 +115,26 @@ void testHashingSpeed() {
 	// v0: Total time for 1000000 hashes: 2094ms | Avg time: 2.09411us
 	// v1: Total time for 1000000 hashes:  216ms | Avg time: 0.216571us
 	// v2: Total time for 1000000 hashes:  181ms | Avg time: 0.181339us (Old hash)
+}
+
+void testNewHashingSpeed() {
+	RubiksCube cube;
+	cube.shuffle(50);
+	int numHashes = 1 * MILLION;
+
+	auto now = std::chrono::high_resolution_clock::now();
+
+	for (int i = 0; i < numHashes; i++) {
+		cube.hashNewV1();
+	}
+
+	auto after = std::chrono::high_resolution_clock::now();
+	auto totTime = std::chrono::duration_cast<std::chrono::microseconds>(after - now).count();
+	std::cout << "Total time for " << numHashes << " new hashes: " << totTime / 1000 << "ms | Avg time: " << static_cast<double>(totTime) / static_cast<double>(numHashes)
+	<< "us\n";
+
+	// v0: Total time for 1000000 new hashes: 5669ms | Avg time: 5.66993us
+	// v1: Total time for 1000000 new hashes: 2058ms | Avg time: 2.05838us
 }
 
 void testNumSolvingMoves() {
@@ -170,9 +238,10 @@ void testMoveSpeed() {
 
 int main() {
 	// confirmSameResult();
-	testHashingSpeed();
-	testMoveSpeed();
-
+	// testHashingSpeed();
+	// testMoveSpeed();
+	confirmSameResultNew();
+	testNewHashingSpeed();
 	// testNumSolvingMoves();
 	// testSolving3Corners();
 }

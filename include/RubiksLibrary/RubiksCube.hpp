@@ -4,6 +4,7 @@
 
 #include <array>
 #include <string>
+#include <unordered_map>
 
 #include "RubiksLibrary/Move.hpp"
 
@@ -101,6 +102,35 @@ namespace RubiksConst {
             {0, 3}
         }
     };
+
+    const std::unordered_map<int, int> colorComboLookupEdges {
+            {23,  48}, // YELLOW, green
+            {29,  54}, // YELLOW, orange
+            {11,  60}, // YELLOW, red
+            {17,  66}, // YELLOW, blue
+
+            {22,  72}, // ORANGE, green
+            {16,  78}, // BLUE, orange
+            { 8,  84}, // RED, blue
+            { 9,  90}, // RED, green
+
+            { 2,  96},
+            { 4, 102},
+            { 1, 108},
+            { 3, 114}
+    };
+
+    const std::unordered_map<int, int> colorComboLookupCorners {
+            {137,  0}, // YELLOW, orange, green => green * 36 + orange * 6 + yellow (smallest value first) | BitPosition 0
+            { 59,  6}, // yellow, green, RED | BitPosition 6, aka 0bHEREXXXXXX (x is irrelevant)
+            {101, 12}, // yellow, BLUE, orange
+            { 53, 18}, // yellow, RED, blue
+
+            { 16, 24}, // WHITE, orange, blue
+            {  8, 30}, // WHITE, blue, red
+            { 22, 36}, // WHITE, green, orange
+            {  9, 42}, // WHITE, red, green
+        };
 }
 
 class RubiksCube {
@@ -112,11 +142,11 @@ public:
     void turn(char m);
     void turn(Move m);
 
-    __int128 hash;
-    std::array<short, 48> getCubeFromHash();
-    void hashNew();
+    static std::array<short, 48> getCubeFromHash(__int128 hash);
+    __int128 hashNewV0() const;
+    __int128 hashNewV1() const;
+    __int128 hashNewV2() const; // TODO: optimize hash
 
-    RubiksCube();
     void print();
     static void print(const std::array<short, 48>& cube);
 
