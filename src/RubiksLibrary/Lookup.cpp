@@ -32,7 +32,7 @@ uint64_t Lookup::hashF(const std::array<unsigned int, 4> &num, uint32_t seed) {
     return hash_value;
 }
 
-bool Lookup::prune(Move &currentMove, Move &prevMove, Move &doublePrevMove) {
+bool Lookup::prune(const Move &currentMove, const Move &prevMove, const Move &doublePrevMove) {
     if (currentMove.face == prevMove.face) { return true;}
 
     if ((currentMove.face == doublePrevMove.face) && (RubiksConst::oppositeFaceAll[currentMove.face] == prevMove.face)) {

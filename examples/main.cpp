@@ -487,7 +487,7 @@ void testHashHugeMap() {
 
 void traverseCube(RubiksCube &cube, std::vector<Move> &moves, int depth) {
     if (depth == 0) {return;}
-    auto size = moves.size();
+    const auto size = moves.size();
 
     Move prevMove {7, 7};
     Move doublePrevMove {7, 7};
@@ -499,7 +499,8 @@ void traverseCube(RubiksCube &cube, std::vector<Move> &moves, int depth) {
         prevMove = moves[size - 1];
     }
 
-    for (Move m : RubiksConst::everyMove)
+    const auto &everyMove = RubiksConst::everyMove;
+    for (const auto &m : everyMove)
     {
         if (Lookup::prune(m, prevMove, doublePrevMove)) { continue;}
 
@@ -571,31 +572,6 @@ int main() {
     Example => Instead of searching for the red and white edge, i pick the
     1/46 edge, find out what colors it is, then place it in the hash.
      */
-
-    RubiksCube cube;
-    auto physical = RubiksConst::physicalPieces;
-
-    // Hash is posision of the white edges, connected to green, red, orange, blue.
-    // Then the edges corrosponding to RED and green, RED and blue, BLUE and orange, ORANGE and green.
-    // Then YELLOW and blue, YELLOW and red, YELLOW and orange, YELLOW and green
-
-    // Then corners WHITE, red, green | WHITE, green, orange | WHITE, blue, red | WHITE, orange, blue
-    // YELLOW, red, blue | YELLOW, blue, orange | YELLOW, green, red | YELLOW, orange, green
-
-    //Indicies: 1, 3, 4, 6, 9, 14, 20, 33, 25, 27, 28, 30, 0, 2, 5, 7, 24, 26, 29, 31
-
-
-    //print_u128(cube.hash);
-    //print_bits(cube.hash);
-
-    cube.turn(1, 2);
-    cube.shuffle(50);
-    auto hash = cube.hashNewV0();
-    RubiksCube::print(cube.cube);
-    const auto out = cube.getCubeFromHash(hash);
-    RubiksCube::print(out);
-    std::cout << "Is correct? " << (out == cube.cube) << "\n";
-    print_bits(hash);
 
 
 

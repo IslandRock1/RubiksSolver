@@ -33,13 +33,14 @@ public:
     std::map<std::array<unsigned int, 4>, std::vector<char>> wholeCube;
     std::map<std::array<unsigned int, 4>, std::vector<char>> combined;
     std::map<std::array<unsigned int, 4>, std::vector<char>> solveFromCrossAnd2Corners;
+    std::unordered_map<__int128, std::vector<char>> newHashMap;
 
     void makeFirstTwoLayers(int depth);
     void makeCrossAnd2Corners(int depth);
     void makeCrossAnd3Corners(int depth);
     void makeWholeCube(int depth);
 
-    static bool prune(Move &currentMove, Move &prevMove, Move &doublePrevMove);
+    static bool prune(const Move &currentMove, const Move &prevMove, const Move &doublePrevMove);
 
     static void save(std::set<std::array<unsigned int, 4>> &map, const std::string &title);
     static void save(std::map<std::array<unsigned int, 4>, uint32_t> &map, const std::string &title);
