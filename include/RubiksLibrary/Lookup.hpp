@@ -17,11 +17,6 @@ struct Position {
 
 class Lookup {
 public:
-    // You will be tempted to switch to unordered maps, its a trap!
-    // There is no built in hashing function for arr<int, 4>
-    // So unless you can hash to a size_t (64 bit), dont do it!
-    // But, i probably can.., so i should at some point do it
-    // TODO: use unordered maps.
     std::map<std::array<unsigned int, 4>, std::vector<char>> firstTwoLayers;
     std::map<std::array<unsigned int, 4>, std::vector<char>> crossAnd2Corners;
     std::set<std::array<unsigned int, 4>> crossAnd2CornersLookupOnly;
@@ -33,19 +28,23 @@ public:
     std::map<std::array<unsigned int, 4>, std::vector<char>> wholeCube;
     std::map<std::array<unsigned int, 4>, std::vector<char>> combined;
     std::map<std::array<unsigned int, 4>, std::vector<char>> solveFromCrossAnd2Corners;
-    std::unordered_map<__int128, std::vector<char>> newHashMap;
+    std::unordered_map<__int128, std::vector<char>> newHashMap2Corner;
 
     void makeFirstTwoLayers(int depth);
     void makeCrossAnd2Corners(int depth);
     void makeCrossAnd3Corners(int depth);
     void makeWholeCube(int depth);
+    void generateLookupNewHash2Corner(int depth);
 
     static bool prune(const Move &currentMove, const Move &prevMove, const Move &doublePrevMove);
 
+    static void save(std::unordered_map<__int128, std::vector<char>> &map, const std::string &title);
     static void save(std::set<std::array<unsigned int, 4>> &map, const std::string &title);
     static void save(std::map<std::array<unsigned int, 4>, uint32_t> &map, const std::string &title);
     static void save(std::map<std::pair<uint32_t, uint16_t>, uint32_t>& map, const std::string& title);
     static void save(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
+
+    static void load(std::unordered_map<__int128, std::vector<char>> &map, std::string &title);
     static void load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
     static void load(std::set<std::array<unsigned int, 4>> &map, std::string &title);
 

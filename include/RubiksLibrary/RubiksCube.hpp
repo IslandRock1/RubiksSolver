@@ -12,7 +12,9 @@ enum Hash {
     TwoCorners,
     ThreeCorners,
     FirstTwoLayers,
-    WholeCube
+    WholeCube,
+
+    TwoCornerNewHash
 };
 
 namespace RubiksConst {
@@ -103,7 +105,18 @@ namespace RubiksConst {
         }
     };
 
-    const std::array<int, 30> colorComboLookupEdgesArray = {0, 108, 96, 114, 102, 0, 0, 0, 84, 90, 0, 60, 0, 0, 0, 0, 78, 66, 0, 0, 0, 0, 72, 48, 0, 0, 0, 0, 0, 54};
+    const std::array<int, 30> colorComboLookupEdgesArray = {
+    //  0    1    2    3    4    5    6    7    8    9
+        0, 108,  96, 114, 102,   0,   0,   0,  84,  90, //  0- 9
+        0,  60,   0,   0,   0,   0,  78,  66,   0,   0, // 10-19
+        0,   0,  72,  48,   0,   0,   0,   0,   0,  54  // 20-29
+    };
+    const std::array<int, 30> colorComboLookupEdgesArray2Corner = {
+    //  0    1    2    3    4    5    6    7    8    9
+        0, 108,  96, 114, 102,   0,   0,   0,  84,  90, //  0- 9
+        0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // 10-19
+        0,   0,   0,   0,   0,   0,   0,   0,   0,   0  // 20-29
+    };
     const std::unordered_map<int, int> colorComboLookupEdges {
             {23,  48}, // YELLOW, green
             {29,  54}, // YELLOW, orange
@@ -133,6 +146,24 @@ namespace RubiksConst {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  80- 89
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  90- 99
         0, 12, 0, 0, 0, 0, 12, 0, 0, 0,        // 100-109
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        // 110-119
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        // 120-129
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        // 130-139
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        // 140-149
+    };
+
+    const std::array<int, 150> colorComboLookupCornersArray2Corner = {
+        0, 0, 0, 0, 0, 0, 0, 0, 30, 42,      //  0-  9
+        0, 0, 0, 30, 0, 0, 0, 0, 0, 42,     //  10- 19
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     //  20- 29
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  30- 39
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  40- 49
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  50- 59
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  60- 69
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  70- 79
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  80- 89
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        //  90- 99
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        // 100-109
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        // 110-119
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        // 120-129
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        // 130-139
@@ -176,6 +207,7 @@ public:
     __int128 hashNewV2() const;
     __int128 hashNewV3() const;
     __int128 hashNewV4() const;
+    __int128 hashNew2Corner() const;
 
     void print();
     static void print(const std::array<short, 48>& cube);

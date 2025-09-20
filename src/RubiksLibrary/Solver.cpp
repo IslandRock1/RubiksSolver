@@ -52,6 +52,102 @@ std::vector<Move> Solver::solveFullCube(RubiksCube &cube, Lookup &lookup, const 
 	return out;
 }
 
+std::vector<Move> Solver::solveUpTo2CornersUsingNewHash(RubiksCube& cube, Lookup& lookup, int depth) {
+	std::array<short, 48> shuffleCubeCopy = cube.cube;
+
+	std::vector<Solution> solutions = findCrossAnd2CornersUsingNewHash(cube, lookup, depth);
+
+	for (auto &solution : solutions) {
+		RubiksCube cubeSolutions;
+		cubeSolutions.cube = shuffleCubeCopy;
+
+		for (auto &m : solution.crossMoves) {
+			cubeSolutions.turn(m);
+		}
+
+		cubeSolutions.raiseCross();
+		cubeSolutions.raiseTwoCorners();
+	}
+
+	std::vector<Move> out;
+	int fewestMoves = 100;
+	for (const auto &sol : solutions) {
+		std::vector allMoves = {sol.crossMoves};
+		auto combinedMoves = Move::combineMoves(allMoves);
+
+		const int num = combinedMoves.size();
+		if (num < fewestMoves) {
+			fewestMoves = num;
+			out = combinedMoves;
+		}
+	}
+
+	return out;
+}
+
+std::vector<Solution> Solver::findCrossAnd2CornersUsingNewHash(RubiksCube &cube, Lookup &lookup, int depth) {
+	if ((cube.numCornerSolved() == 3) && cube.solvedWhiteCross()) {return {};}
+
+	std::vector<Move> moves;
+	std::vector<Solution> solutions;
+
+	SearchConditionsNewHash searchConditions = {cube, lookup.newHashMap2Corner, moves, solutions, TwoCornerNewHash};
+	searchMovesNewHash(searchConditions, depth);
+
+	if (solutions.empty()) {
+		std::cout << "\n";
+		std::cout << "Had to increase depth to " << depth + 1 << ".\n";
+		return findCrossAnd2CornersUsingNewHash(cube, lookup, depth + 1);
+		// throw std::runtime_error("No solution found for this depth-limit and lookup combo.");
+	} else {
+		return solutions;
+	}
+}
+
+void Solver::searchMovesNewHash(SearchConditionsNewHash& searchConditions, int depth) {
+	auto &cube = searchConditions.cube;
+	auto &lookup = searchConditions.lookup;
+
+	const auto hash = cube.hashNew2Corner();
+	if (lookup.contains(hash)) {
+		const auto lookupChars = lookup[hash];
+		const auto lookupMoves = Move::convertVectorCharToMove(lookupChars);
+		const auto solution = Move::combineMovesWithLookupMoves(searchConditions.moves, lookupMoves);
+
+		Solution newSol;
+		newSol.crossMoves = solution;
+		searchConditions.solutions.push_back(newSol);
+	}
+
+	if (depth == 0) {return;}
+
+	auto &moves = searchConditions.moves;
+	auto size = moves.size();
+
+	Move prevMove {7, 7};
+	Move doublePrevMove {7, 7};
+
+	if (size > 1) {
+		prevMove = moves[size - 1];
+		doublePrevMove = moves[size - 2];
+	} else if (size > 0) {
+		prevMove = moves[size - 1];
+	}
+
+	for (Move m : RubiksConst::everyMove)
+	{
+		if (Lookup::prune(m, prevMove, doublePrevMove)) { continue;}
+
+		moves.push_back(m);
+		cube.turn(m);
+
+		searchMovesNewHash(searchConditions, depth - 1);
+
+		cube.turn(m.face, 4 - m.rotations);
+		moves.pop_back();
+	}
+}
+
 std::vector<Move> Solver::solveUpTo3Corners(RubiksCube& cube, Lookup& lookup, int depth) {
 	std::array<short, 48> shuffleCubeCopy = cube.cube;
 

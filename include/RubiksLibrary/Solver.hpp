@@ -17,6 +17,14 @@ struct SearchConditions {
 	Hash hash;
 };
 
+struct SearchConditionsNewHash {
+	RubiksCube &cube;
+	std::unordered_map<__int128, std::vector<char>> &lookup;
+	std::vector<Move> &moves;
+	std::vector<Solution> &solutions;
+	Hash hash;
+};
+
 struct SearchConditionsUnordered {
 	RubiksCube &cube;
 	std::unordered_map<uint64_t, std::vector<char>> &lookup;
@@ -32,6 +40,9 @@ public:
 	std::vector<Move> solveFullCubeUsingUnordered(RubiksCube &cube, Lookup &lookup, int depth = 4);
 
 	std::vector<Move> solveUpTo3Corners(RubiksCube &cube, Lookup &lookup, int depth = 4);
+	static std::vector<Move> solveUpTo2CornersUsingNewHash(RubiksCube &cube, Lookup &lookup, int depth = 4);
+	static std::vector<Solution> findCrossAnd2CornersUsingNewHash(RubiksCube &cube, Lookup &lookup, int depth = 3);
+	static void searchMovesNewHash(SearchConditionsNewHash &searchConditions, int depth);
 
 private:
 	std::vector<Solution> findCrossAnd2Corners(RubiksCube &cube, Lookup &lookup, int depth = 3);

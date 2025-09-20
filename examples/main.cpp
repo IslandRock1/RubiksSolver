@@ -11,6 +11,7 @@
 
 #include "RubiksLibrary/Lookup.hpp"
 #include "RubiksLibrary/solution.hpp"
+#include "RubiksLibrary/Solver.hpp"
 
 /*
 
@@ -557,37 +558,18 @@ void print_u128(__int128 x) {
 
 int main() {
 
-    /*
-
-    ################ README! ########################
-
-    Going for a new hashing method. Currently a decoder has been made, as well as
-    a initializer of some sort. Next step is probably to make it so turns will
-    update the hash. Lets goooo!
-
-    Should test both hashing as the moves are done, as well as creating the hash afterwards.
-    The afterwards hash can use the cube as the starting point, and then fill in the hash
-    rather than using the hash and searching for the pieces.
-
-    Example => Instead of searching for the red and white edge, i pick the
-    1/46 edge, find out what colors it is, then place it in the hash.
-     */
-
-
-
-
-    // auto lookup = Lookup::loadAllMaps().crossAnd2Corners;
-    // std::vector<uint64_t> arrayBase;
-    // for (const auto& key : lookup | std::views::keys) {
-    //     auto newKey = hashF(key, 321464301);
-    //     arrayBase.emplace_back(newKey);
+    Lookup lookup;
+    std::string title = "newHashMap2CornerD7";
+    Lookup::load(lookup.newHashMap2Corner, title);
+    // for (int depth = 0; depth < 9; depth++) {
+    //     std::cout << "Depth: " << depth << " | ";
+    //     lookup.generateLookupNewHash2Corner(depth);
+    //     std::string title = "newHaspMap2CornerD" + std::to_string(depth);
+    //     Lookup::save(lookup.newHashMap2Corner, title);
     // }
-    //
-    // // All times in IDE, faster (?) from terminal.
-    // // V0 time: 105270 ms
-    // // V1 time:  76356 ms # Using an array for keys
-    // // V2 time:  19335 ms # Using a set to store seen values
-    //
-    // findBestMagicNumber(arrayBase);
-    // return 1;
+
+    RubiksCube cube;
+    cube.shuffle(100);
+
+    auto solvingMoves = Solver::solveUpTo2CornersUsingNewHash(cube, lookup);
 }
