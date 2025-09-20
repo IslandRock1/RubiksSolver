@@ -4,6 +4,7 @@ set(SHARED_SOURCES
         RubiksLibrary/Lookup.cpp
         RubiksLibrary/Move.cpp
         RubiksLibrary/Solver.cpp
+        RubiksLibrary/InfoLogger.cpp
 )
 
 add_library(RubiksSolverLibrary ${SHARED_SOURCES})
