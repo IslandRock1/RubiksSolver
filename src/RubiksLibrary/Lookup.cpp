@@ -2,11 +2,11 @@
 #include <iostream>
 #include <chrono>
 #include <fstream>
+#include <ranges>
 
 #include "RubiksLibrary/Move.hpp"
 #include "RubiksLibrary/Lookup.hpp"
-
-#include <ranges>
+#include "RubiksLibrary/InfoLogger.hpp"
 
 uint64_t Lookup::hashF(const std::array<unsigned int, 4> &num, uint32_t seed) {
     uint64_t hash_value = 0x811C9DC5 ^ seed; // FNV offset basis XOR seed
@@ -306,17 +306,21 @@ void generateLookupNewHashRec2Corner(
     std::unordered_map<__int128, std::vector<char>> &map,
     std::vector<char> &moves,
     RubiksCube &cube,
+    InfoLogger &logger,
     const int depth) {
 
-    if (depth == 0) { return;}
+    logger.incrementStates();
+    logger.logg(moves);
 
     auto hash = cube.hashNew2Corner();
-    if (map.contains(hash)) {
-        if (moves.size() < map[hash].size()) {
-            map[hash] = moves;
+
+    auto it = map.find(hash);
+    if (it != map.end()) {
+        if (moves.size() < it->second.size()) {
+            it->second = moves; // only assign if smaller
         }
     } else {
-        map[hash] = moves;
+        map.emplace(hash, moves); // avoids double lookup
     }
 
     const auto size = moves.size();
@@ -330,12 +334,14 @@ void generateLookupNewHashRec2Corner(
         prevMove = Move(moves[size - 1]);
     }
 
+    if (depth == 1) {return;}
+
     for (auto m : RubiksConst::everyMove) {
         if (Lookup::prune(m, prevMove, doublePrevMove)) { continue;}
 
         moves.push_back(m.move);
         cube.turn(m);
-        generateLookupNewHashRec2Corner(map, moves, cube, depth - 1);
+        generateLookupNewHashRec2Corner(map, moves, cube, logger, depth - 1);
         cube.turn(m.face, 4 - m.rotations);
         moves.pop_back();
     }
@@ -345,8 +351,10 @@ void Lookup::generateLookupNewHash2Corner(const int depth) {
     const auto start = std::chrono::high_resolution_clock::now();
 
     std::vector<char> moves;
+    moves.reserve(10);
     RubiksCube cube;
-    generateLookupNewHashRec2Corner(newHashMap2Corner, moves, cube, depth + 1);
+    InfoLogger logger;
+    generateLookupNewHashRec2Corner(newHashMap2Corner, moves, cube, logger, depth + 1);
 
     const auto end = std::chrono::high_resolution_clock::now();
     const auto durLookup = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

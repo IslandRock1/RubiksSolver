@@ -559,17 +559,18 @@ void print_u128(__int128 x) {
 int main() {
 
     Lookup lookup;
-    std::string title = "newHashMap2CornerD7";
-    Lookup::load(lookup.newHashMap2Corner, title);
-    // for (int depth = 0; depth < 9; depth++) {
-    //     std::cout << "Depth: " << depth << " | ";
-    //     lookup.generateLookupNewHash2Corner(depth);
-    //     std::string title = "newHaspMap2CornerD" + std::to_string(depth);
-    //     Lookup::save(lookup.newHashMap2Corner, title);
-    // }
+    // std::string title = "newHashMap2CornerD7";
+    // Lookup::load(lookup.newHashMap2Corner, title);
 
-    RubiksCube cube;
-    cube.shuffle(100);
+    int depth = 7;
+    std::cout << "Depth: " << depth << "\n";
+    lookup.generateLookupNewHash2Corner(depth);
+    std::cout << "\n";
+    std::string title = "newHaspMap2CornerD" + std::to_string(depth);
+    Lookup::save(lookup.newHashMap2Corner, title);
 
-    auto solvingMoves = Solver::solveUpTo2CornersUsingNewHash(cube, lookup);
+    // RubiksCube cube;
+    // cube.shuffle(100);
+    //
+    // auto solvingMoves = Solver::solveUpTo2CornersUsingNewHash(cube, lookup);
 }

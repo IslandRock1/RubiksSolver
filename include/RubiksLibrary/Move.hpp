@@ -5,7 +5,6 @@
 #ifndef RUBIKSSOLVER_MOVE_HPP
 #define RUBIKSSOLVER_MOVE_HPP
 
-
 class Move {
 public:
     explicit Move(char m);
@@ -35,5 +34,13 @@ public:
     static void printMoves(const std::vector<char> &moves, const std::string& end = "\n");
 };
 
+namespace MoveConst {
+    const Move illegalMove{7, 7};
+
+    constexpr char moves[18] = {
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+        'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'
+};
+}
 
 #endif //RUBIKSSOLVER_MOVE_HPP
