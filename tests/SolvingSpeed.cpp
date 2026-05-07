@@ -8,6 +8,7 @@
 #include "RubiksLibrary/RubiksCube.hpp"
 
 #define MILLION 1000000
+#define THOUSAND 1000
 
 inline uint64_t mix64(uint64_t x) {
 	x ^= x >> 30;
@@ -96,6 +97,41 @@ void confirmSameResultNew() {
 	std::cout << "For " << numHashes << " hashes, the functions are equal." << "\n";
 }
 
+void confirmSameResultNewVsOld() {
+	RubiksCube cube;
+
+	Lookup lookup;
+
+	int numEntries = 0;
+	int numHashes = 30;
+	for (int i = 0; i < numHashes; i++) {
+		cube.shuffle(50);
+		auto h0 = cube.hashFullCube();
+		auto h1 = cube.hashNewV4();
+
+		auto b0 = lookup.crossAnd2Corners.contains(h0);
+		auto b1 = lookup.newHashMap2Corner.contains(h1);
+
+		if (b0 != b1) {
+			std::cout << "Hmm.. invalid lookup thingy??\n";
+			std::cout << "Map size: " << numEntries << "\n";
+			return;
+		}
+
+		if (!b0) {
+			lookup.crossAnd2Corners[h0] = {};
+			lookup.newHashMap2Corner[h1] = {};
+			numEntries++;
+		} else {
+			std::cout << "Current size: " << numEntries << "\n";
+		}
+
+	}
+
+	std::cout << "Map size: " << numEntries << "\n";
+	std::cout << "For " << numHashes << " hashes, the functions are equal." << "\n";
+}
+
 void testHashingSpeed() {
 	RubiksCube cube;
 	cube.shuffle(50);
@@ -104,7 +140,7 @@ void testHashingSpeed() {
 	auto now = std::chrono::high_resolution_clock::now();
 
 	for (int i = 0; i < numHashes; i++) {
-		cube.hashCrossAnd2CornersV2();
+		cube.hashNewV4();
 	}
 
 	auto after = std::chrono::high_resolution_clock::now();
@@ -155,7 +191,7 @@ void testNumSolvingMoves() {
 	auto now = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < num_test; i++) {
 		cube.shuffle(50);
-		auto solvingMoves = solver.solveFullCubeUsingUnordered(cube, lookup, 5);
+		auto solvingMoves = solver.solveFullCubeUsingUnordered(cube, lookup, 4);
 		totNumMoves += solvingMoves.size();
 
 		auto t1 = std::chrono::high_resolution_clock::now();
@@ -177,6 +213,7 @@ void testNumSolvingMoves() {
 	// Solved 100 cubes, avg number of moves: 28.73. Total time: 18161 | Avg time: 181.61 (original)
 	// Solved 100 cubes, avg number of moves: 28.73. Total time:  8484 | Avg time:  84.84 (faster hashing)
 	// Solved 100 cubes, avg number of moves: 28.73. Total time:  6388 | Avg time:  63.88 (unordered map)
+	// Solved 100 cubes, avg number of moves: 28.73. Total time:  5077 | Avg time: 50.77 (no idea)
 }
 
 void testSolving3Corners() {
@@ -222,6 +259,101 @@ void testSolving3Corners() {
 	<< "\n";
 }
 
+void testNumSolvingMovesTwoCornerNewHash() {
+	RubiksCube cube = RubiksCube();
+
+	Lookup lookup;
+	std::string title = "newHashMap2CornersConstructedDepth7";
+	Lookup::load(lookup.newHashMap2Corner, title);
+	std::cout << "Finished loading maps." << "\n";
+
+	unsigned long totNumMoves = 0;
+
+	int num_test = 100;
+	auto now = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < num_test; i++) {
+		cube.shuffle(50);
+		auto solvingMoves = Solver::solveUpTo2CornersUsingNewHash(cube, lookup, 4);
+		totNumMoves += solvingMoves.size();
+
+		auto t1 = std::chrono::high_resolution_clock::now();
+		auto currTime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - now).count();
+
+		std::cout << i << "/" << num_test << " | " << 100 * static_cast<double>(i) / static_cast<double>(num_test) << "%"
+		<< " | Elapsed time: " << currTime << " | Estimated remaining time: "
+		<< currTime * ((static_cast<double>(num_test) / static_cast<double>(i)) - 1) << "\r";
+
+	}
+	std::cout << "\n\n";
+	std::cout << "Solved " << num_test << " cubes, avg number of moves: " << static_cast<double>(totNumMoves) / static_cast<double>(num_test) << ".\n";
+
+	auto after = std::chrono::high_resolution_clock::now();
+	auto totTime = std::chrono::duration_cast<std::chrono::milliseconds>(after - now).count();
+	std::cout << "Total time: " << totTime << " | Avg time: " << static_cast<double>(totTime) / static_cast<double>(num_test)
+	<< "\n";
+}
+
+void compareLookupSpeed() {
+	Lookup lookup;
+	RubiksCube cube;
+
+	int generatingIters = 1 * MILLION;
+	int numTests = 1 * MILLION;
+
+	int numElements = 0;
+	for (int i = 0; i < generatingIters; i++) {
+		if (i % 10000 == 0) {
+			std::cout << "i: " << i << " => " << 100.0 * static_cast<double>(i) / static_cast<double>(generatingIters) << "%         \r";
+		}
+
+		cube.shuffle(100, false, i);
+		auto h0 = cube.hashCrossAnd2CornersV2();
+		auto h1 = cube.hashNew2Corner();
+
+		auto b0 = lookup.crossAnd2Corners.contains(h0);
+		auto b1 = lookup.newHashMap2Corner.contains(h1);
+
+		if (b0 != b1) {
+			std::cout << "Hmm.. invalid lookup thingy??\n";
+			return;
+		}
+
+		if (!b0) {
+			lookup.crossAnd2Corners[h0] = {};
+			lookup.newHashMap2Corner[h1] = {};
+			numElements++;
+		}
+	}
+	std::cout << "\n";
+
+	std::cout << "Maps created!\n";
+	std::cout << "There are " << numElements << " and " << numElements << " entries in the maps.\n";
+
+	auto now = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < numTests; i++) {
+		cube.shuffle(5);
+		auto h0 = cube.hashCrossAnd2Corners();
+		auto b0 = lookup.crossAnd2Corners.contains(h0);
+	}
+
+	auto after = std::chrono::high_resolution_clock::now();
+	auto totTime = std::chrono::duration_cast<std::chrono::milliseconds>(after - now).count();
+	std::cout << "Total time (old): " << totTime << "ms | Avg time: " << static_cast<double>(totTime) / static_cast<double>(numTests)
+	<< "ms\n";
+
+	now = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < numTests; i++) {
+		cube.shuffle(5);
+		auto h0 = cube.hashNew2Corner();
+		auto b0 = lookup.newHashMap2Corner.contains(h0);
+	}
+
+	after = std::chrono::high_resolution_clock::now();
+	totTime = std::chrono::duration_cast<std::chrono::milliseconds>(after - now).count();
+	std::cout << "Total time (new): " << totTime << "ms | Avg time: " << static_cast<double>(totTime) / static_cast<double>(numTests)
+	<< "ms\n";
+}
+
 void testMoveSpeed() {
 	RubiksCube cube;
 	const unsigned long long numCycles = 1 * MILLION;
@@ -242,11 +374,52 @@ void testMoveSpeed() {
 }
 
 int main() {
+
+	Solver solver;
+	Lookup lookup = Lookup::loadAllMaps();
+	std::cout << "Finished loading.\n";
+
+	RubiksCube cube;
+
+	std::chrono::duration<long long, std::ratio<1, 1000000>> sumTime{};
+	int numSolved = 0;
+	int sumMoves = 0;
+	for (int i = 0; i < 1000; i++) {
+		cube.shuffle(100, false, i + 312476);
+		// cube.print();
+		auto t0 = std::chrono::high_resolution_clock::now();
+		auto moves = solver.solveFullCube(cube, lookup, 5);
+		auto t1 = std::chrono::high_resolution_clock::now();
+		sumTime += std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);
+		sumMoves += moves.size();
+
+		// std::cout << "Num moves: " << moves.size() << " | ";
+		// Move::printMoves(moves);
+		for (const auto m : moves) {
+			cube.turn(m);
+		}
+		if (cube.solved()) {
+			numSolved++;
+		}
+
+	}
+
+	std::cout << "Solved cubes: " << numSolved << "/1000\n";
+	std::cout << "Total time: " << sumTime.count() << " us.\n";
+	std::cout << "Avg time => " << static_cast<double>(sumTime.count()) / 1000.0 << " us.\n";
+	std::cout << "Total moves: " << sumMoves << ".\n";
+	std::cout << "Avg moves => " << static_cast<double>(sumMoves) / 1000.0 << ".\n";
+
+
 	// confirmSameResult();
 	// testHashingSpeed();
 	// testMoveSpeed();
-	confirmSameResultNew();
-	testNewHashingSpeed();
+	// confirmSameResultNew();
+	// testNewHashingSpeed();
 	// testNumSolvingMoves();
 	// testSolving3Corners();
+	// confirmSameResultNewVsOld();
+
+	//testNumSolvingMovesTwoCornerNewHash();
+	// compareLookupSpeed();
 }
