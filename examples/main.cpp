@@ -8,6 +8,7 @@
 #include <chrono>
 #include <ranges>
 #include <bitset>
+#include <filesystem>
 
 #include "RubiksLibrary/Lookup.hpp"
 #include "RubiksLibrary/solution.hpp"
@@ -556,18 +557,110 @@ void print_u128(__int128 x) {
     std::cout << s << "\n";
 }
 
-int main() {
-
+void combineLookups(int depth) {
     Lookup lookup;
+
+    for (const char m : MoveConst::moves) {
+        std::string titlePartiallyConstructed = "PartiallyConstructed";
+        titlePartiallyConstructed += m;
+        auto path = std::string(DATA_PATH) + "/" + titlePartiallyConstructed + ".txt";
+        if (std::filesystem::exists(path)) {
+            std::cout << "Loading move " << m << " from file..\n";
+            Lookup::load(lookup.newHashMap2Corner, titlePartiallyConstructed);
+            continue;
+        }
+
+        std::unordered_map<__int128, std::vector<char>> partMap;
+        std::string title = "newHashMap2CornersMove";
+        title += m;
+        title += "Depth" + std::to_string(depth);
+        Lookup::load(partMap, title);
+
+        auto mapSize = partMap.size();
+        int i = 0;
+        for (auto &[key, vec] : partMap) {
+            if (i % 1000 == 0) {
+                std::cout << "Move: " << m << " | Progress: " << i << "/" << mapSize << " | " << 100.0 * static_cast<double>(i) / static_cast<double>(mapSize) << "%" << "           \r";
+            }
+            i++;
+
+            if (lookup.newHashMap2Corner.contains(key)) {
+                if (vec.size() < lookup.newHashMap2Corner[key].size()) {
+                    lookup.newHashMap2Corner[key] = vec;
+                }
+            } else {
+                lookup.newHashMap2Corner[key] = vec;
+            }
+        }
+
+        titlePartiallyConstructed = "PartiallyConstructed";
+        titlePartiallyConstructed += m;
+        Lookup::save(lookup.newHashMap2Corner, titlePartiallyConstructed);
+    }
+    std::cout << "\nSaving map...";
+
+    std::string title = "newHashMap2CornersConstructed";
+    title += "Depth" + std::to_string(depth);
+    Lookup::save(lookup.newHashMap2Corner, title);
+}
+
+int main() {
+    return 1;
+
+    // Lookup lookup;
+    // RubiksCube cube;
+    //
+    // int numTests = 10 * 1000 * 1000;
+    // for (int i = 0; i < numTests; i++) {
+    //     std::cout << "i: " << i << " => " << 100.0 * static_cast<double>(i) / static_cast<double>(numTests) << "%         \r";
+    //
+    //     cube.shuffle(10);
+    //
+    //     auto h0 = cube.hashCrossAnd3Corners();
+    //     auto h1 = cube.hashNew3Corner();
+    //
+    //     const auto b0 = lookup.crossAnd3Corners.contains(h0);
+    //     const auto b1 = lookup.newHashMap3Corner.contains(h1);
+    //
+    //     if (b0 != b1) {
+    //         std::cout << "\nSomething wrong..\n";
+    //         return 1;
+    //     }
+    //
+    //     if (!b0) {
+    //         lookup.crossAnd3Corners[h0] = {};
+    //         lookup.newHashMap3Corner[h1] = {};
+    //     }
+    // }
+
+
+    // Lookup lookup;
+    // std::string title = "newHashMap2CornersConstructedDepth7";
+    // Lookup::load(lookup.newHashMap2Corner, title);
+    //
+    // RubiksCube cube;
+    // cube.shuffle(50);
+    // std::cout << "Starting solve..\n";
+    //
+    // auto moves = Solver::solveUpTo2CornersUsingNewHash(cube, lookup, 4);
+    // std::cout << "Finished solving!\n";
+    // std::cout << "Moves: ";
+    // Move::printMoves(moves);
+
+    // Lookup lookup;
     // std::string title = "newHashMap2CornerD7";
     // Lookup::load(lookup.newHashMap2Corner, title);
 
-    int depth = 7;
-    std::cout << "Depth: " << depth << "\n";
-    lookup.generateLookupNewHash2Corner(depth);
-    std::cout << "\n";
-    std::string title = "newHaspMap2CornerD" + std::to_string(depth);
-    Lookup::save(lookup.newHashMap2Corner, title);
+    // int depth = 7;
+    // std::cout << "Depth: " << depth << "\n";
+    // lookup.generateLookupNewHash2Corner(depth);
+    // std::cout << "\n";
+
+    // std::cout << "Combining..\n";
+    // combineLookups(depth);
+
+    // std::string title = "newHaspMap2CornerD" + std::to_string(depth);
+    // Lookup::save(lookup.newHashMap2Corner, title);
 
     // RubiksCube cube;
     // cube.shuffle(100);

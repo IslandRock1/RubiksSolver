@@ -183,7 +183,6 @@ std::vector<Move> Solver::solveUpTo3Corners(RubiksCube& cube, Lookup& lookup, in
 	return out;
 }
 
-
 std::vector<Move> Solver::solveFullCubeUsingUnordered(RubiksCube& cube, Lookup& lookup, int depth) {
 	std::array<short, 48> shuffleCubeCopy = cube.cube;
 
@@ -195,7 +194,7 @@ std::vector<Move> Solver::solveFullCubeUsingUnordered(RubiksCube& cube, Lookup& 
 			cubeSolutions.cube[i] = shuffleCubeCopy[i];
 		}
 
-		for (auto &m : solution.crossMoves) {
+		for (const auto &m : solution.crossMoves) {
 			cubeSolutions.turn(m);
 		}
 
@@ -203,14 +202,13 @@ std::vector<Move> Solver::solveFullCubeUsingUnordered(RubiksCube& cube, Lookup& 
 		cubeSolutions.raiseTwoCorners();
 	}
 
-
 	findAndTestSolutionsFirstTwoLayers(shuffleCubeCopy, lookup, solutions);
 	findAndTestSolutionsLastLayer(shuffleCubeCopy, lookup, solutions);
 
 	std::vector<Move> out;
 	int fewestMoves = 100;
 	for (const auto &sol : solutions) {
-		std::vector allMoves = {sol.crossMoves};
+		std::vector allMoves = {sol.crossMoves, sol.twoLayerMoves, sol.lastLayerMoves};
 		auto combinedMoves = Move::combineMoves(allMoves);
 
 		const int num = combinedMoves.size();
