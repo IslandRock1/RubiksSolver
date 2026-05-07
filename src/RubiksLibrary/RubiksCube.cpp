@@ -354,6 +354,7 @@ __int128 RubiksCube::hashNewV4() const {
             position = colorComboLookupCorners[colorCombo];
 
         }
+        if (position < 0) {continue;}
         set_bits(hash, position, 6, i);
     }
     return hash;
@@ -362,6 +363,34 @@ __int128 RubiksCube::hashNewV4() const {
 __int128 RubiksCube::hashNew2Corner() const {
     auto &colorComboLookupEdges = RubiksConst::colorComboLookupEdgesArray2Corner;
     auto &colorComboLookupCorners = RubiksConst::colorComboLookupCornersArray2Corner;
+    auto &physicalPieces = RubiksConst::physicalPieces;
+
+    __int128 hash = 0;
+    for (int i = 0; i < 48; i++) {
+        auto &piece = physicalPieces[i];
+        const int ix0 = piece[0];
+        if (cube[i] > cube[ix0]) {continue;}
+
+        int position;
+        if (piece.size() == 1) {
+            const auto colorCombo = cube[i] * 6 + cube[ix0];
+            position = colorComboLookupEdges[colorCombo];
+        } else {
+            const int ix1 = piece[1];
+            if (cube[i] > cube[ix1]) {continue;}
+
+            const auto colorCombo = cube[i] * 36 + cube[ix0] * 6 + cube[ix1];
+            position = colorComboLookupCorners[colorCombo];
+
+        }
+        set_bits(hash, position, 6, i);
+    }
+    return hash;
+}
+
+__int128 RubiksCube::hashNew3Corner() const {
+    auto &colorComboLookupEdges = RubiksConst::colorComboLookupEdgesArray3Corner;
+    auto &colorComboLookupCorners = RubiksConst::colorComboLookupCornersArray3Corner;
     auto &physicalPieces = RubiksConst::physicalPieces;
 
     __int128 hash = 0;
