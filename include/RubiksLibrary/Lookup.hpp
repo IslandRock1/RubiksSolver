@@ -29,6 +29,7 @@ public:
     std::map<std::array<unsigned int, 4>, std::vector<char>> combined;
     std::map<std::array<unsigned int, 4>, std::vector<char>> solveFromCrossAnd2Corners;
     std::unordered_map<__int128, std::vector<char>> newHashMap2Corner;
+    std::unordered_map<__int128, std::vector<char>> newHashMap3Corner;
 
     void makeFirstTwoLayers(int depth);
     void makeCrossAnd2Corners(int depth);
@@ -44,6 +45,7 @@ public:
     static void save(std::map<std::pair<uint32_t, uint16_t>, uint32_t>& map, const std::string& title);
     static void save(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
 
+    static void load(std::unordered_map<uint64_t, std::vector<char>> &map, std::string &title);
     static void load(std::unordered_map<__int128, std::vector<char>> &map, std::string &title);
     static void load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title);
     static void load(std::set<std::array<unsigned int, 4>> &map, std::string &title);
