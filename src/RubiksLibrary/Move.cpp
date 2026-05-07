@@ -31,14 +31,9 @@ Move::Move(char m): move(m) {
 }
 
 void Move::updateFaceRot() {
-    constexpr char moves[18] = {
-            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-            'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'
-    };
-
     int moveIndex = -1;
     for (int i = 0; i < 18; ++i) {
-        if (moves[i] == move) {
+        if (MoveConst::moves[i] == move) {
             moveIndex = i;
             break;
         }
@@ -55,15 +50,9 @@ void Move::updateFaceRot() {
     rotations = moveIndex % 3 + 1;
 }
 
-Move::Move(int face, int rotations): face(face), rotations(rotations) {
-    int moveId = face * 3 + rotations - 1;
-
-    constexpr char moves[18] = {
-            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-            'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'
-    };
-
-    move = moves[moveId];
+Move::Move(const int face, const int rotations): face(face), rotations(rotations) {
+    const int moveId = face * 3 + rotations - 1;
+    move = MoveConst::moves[moveId];
 }
 
 void Move::updateChar() {

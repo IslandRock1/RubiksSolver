@@ -20,6 +20,7 @@ endif()
 find_package(Python REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 REQUIRED)
 
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++")
 add_subdirectory(examples)
 add_subdirectory(tests)
 add_subdirectory(src)

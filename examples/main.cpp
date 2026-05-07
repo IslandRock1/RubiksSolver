@@ -7,9 +7,12 @@
 #include <limits>
 #include <chrono>
 #include <ranges>
+#include <bitset>
+#include <filesystem>
 
 #include "RubiksLibrary/Lookup.hpp"
 #include "RubiksLibrary/solution.hpp"
+#include "RubiksLibrary/Solver.hpp"
 
 /*
 
@@ -486,7 +489,7 @@ void testHashHugeMap() {
 
 void traverseCube(RubiksCube &cube, std::vector<Move> &moves, int depth) {
     if (depth == 0) {return;}
-    auto size = moves.size();
+    const auto size = moves.size();
 
     Move prevMove {7, 7};
     Move doublePrevMove {7, 7};
@@ -498,7 +501,8 @@ void traverseCube(RubiksCube &cube, std::vector<Move> &moves, int depth) {
         prevMove = moves[size - 1];
     }
 
-    for (Move m : RubiksConst::everyMove)
+    const auto &everyMove = RubiksConst::everyMove;
+    for (const auto &m : everyMove)
     {
         if (Lookup::prune(m, prevMove, doublePrevMove)) { continue;}
 
@@ -512,45 +516,154 @@ void traverseCube(RubiksCube &cube, std::vector<Move> &moves, int depth) {
     }
 }
 
-int main() {
+std::string bits_to_string(__int128 x, int bits = 128, bool group_by_bytes = false) {
+    if (bits <= 0) return {};
+    if (bits > 128) bits = 128;
 
-    /*
+    uint64_t low  = static_cast<uint64_t>(x);
+    uint64_t high = static_cast<uint64_t>(x >> 64);
 
-    ################ README! ########################
+    // bitset produces "MSB..LSB" for each 64-bit chunk
+    std::string full = std::bitset<64>(high).to_string() + std::bitset<64>(low).to_string();
+    // We want the top 'bits' starting from the MSB side:
+    std::string sub = full.substr(128 - bits);
 
-    For speedup, you can use a set of the hash values (uint64_t).
-    That way, checking if this hash is in the table will be a lot faster,
-    then you can use the map only when wanting to get the actual moves.
+    if (!group_by_bytes) return sub;
 
-    The moves have been compressed to an uint32_t, so that's great!
-    With some luck the keys may be able to be mapped to an uint32_t,
-    but seems unlikely, unfortunately.
-
-     */
-
-    for (int depth = 0; depth < 10; depth++) {
-        RubiksCube cube;
-        std::vector<Move> moves;
-
-        auto t0 = std::chrono::high_resolution_clock::now();
-        traverseCube(cube, moves, depth);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-        std::cout << "For a depth of " << depth << ", time used is: " << duration << "ms.\n";
+    // Insert spaces every 6 bits for readability
+    std::string grouped;
+    for (size_t i = 0; i < sub.size(); ++i) {
+        grouped.push_back(sub[i]);
+        if ((i + 5) % 6 == 0 && (i + 5) != sub.size()) grouped.push_back(' ');
     }
+    return grouped;
+}
 
-    // auto lookup = Lookup::loadAllMaps().crossAnd2Corners;
-    // std::vector<uint64_t> arrayBase;
-    // for (const auto& key : lookup | std::views::keys) {
-    //     auto newKey = hashF(key, 321464301);
-    //     arrayBase.emplace_back(newKey);
+void print_bits(__int128 x, int bits = 128, bool group_by_bytes = true) {
+    std::cout << bits_to_string(x, bits, group_by_bytes) << '\n';
+}
+
+void print_u128(__int128 x) {
+    if (x == 0) {
+        std::cout << 0;
+        return;
+    }
+    std::string s;
+    while (x > 0) {
+        s.push_back('0' + (x % 10));
+        x /= 10;
+    }
+    std::reverse(s.begin(), s.end());
+    std::cout << s << "\n";
+}
+
+void combineLookups(int depth) {
+    Lookup lookup;
+
+    for (const char m : MoveConst::moves) {
+        std::string titlePartiallyConstructed = "PartiallyConstructed";
+        titlePartiallyConstructed += m;
+        auto path = std::string(DATA_PATH) + "/" + titlePartiallyConstructed + ".txt";
+        if (std::filesystem::exists(path)) {
+            std::cout << "Loading move " << m << " from file..\n";
+            Lookup::load(lookup.newHashMap2Corner, titlePartiallyConstructed);
+            continue;
+        }
+
+        std::unordered_map<__int128, std::vector<char>> partMap;
+        std::string title = "newHashMap2CornersMove";
+        title += m;
+        title += "Depth" + std::to_string(depth);
+        Lookup::load(partMap, title);
+
+        auto mapSize = partMap.size();
+        int i = 0;
+        for (auto &[key, vec] : partMap) {
+            if (i % 1000 == 0) {
+                std::cout << "Move: " << m << " | Progress: " << i << "/" << mapSize << " | " << 100.0 * static_cast<double>(i) / static_cast<double>(mapSize) << "%" << "           \r";
+            }
+            i++;
+
+            if (lookup.newHashMap2Corner.contains(key)) {
+                if (vec.size() < lookup.newHashMap2Corner[key].size()) {
+                    lookup.newHashMap2Corner[key] = vec;
+                }
+            } else {
+                lookup.newHashMap2Corner[key] = vec;
+            }
+        }
+
+        titlePartiallyConstructed = "PartiallyConstructed";
+        titlePartiallyConstructed += m;
+        Lookup::save(lookup.newHashMap2Corner, titlePartiallyConstructed);
+    }
+    std::cout << "\nSaving map...";
+
+    std::string title = "newHashMap2CornersConstructed";
+    title += "Depth" + std::to_string(depth);
+    Lookup::save(lookup.newHashMap2Corner, title);
+}
+
+int main() {
+    return 1;
+
+    // Lookup lookup;
+    // RubiksCube cube;
+    //
+    // int numTests = 10 * 1000 * 1000;
+    // for (int i = 0; i < numTests; i++) {
+    //     std::cout << "i: " << i << " => " << 100.0 * static_cast<double>(i) / static_cast<double>(numTests) << "%         \r";
+    //
+    //     cube.shuffle(10);
+    //
+    //     auto h0 = cube.hashCrossAnd3Corners();
+    //     auto h1 = cube.hashNew3Corner();
+    //
+    //     const auto b0 = lookup.crossAnd3Corners.contains(h0);
+    //     const auto b1 = lookup.newHashMap3Corner.contains(h1);
+    //
+    //     if (b0 != b1) {
+    //         std::cout << "\nSomething wrong..\n";
+    //         return 1;
+    //     }
+    //
+    //     if (!b0) {
+    //         lookup.crossAnd3Corners[h0] = {};
+    //         lookup.newHashMap3Corner[h1] = {};
+    //     }
     // }
+
+
+    // Lookup lookup;
+    // std::string title = "newHashMap2CornersConstructedDepth7";
+    // Lookup::load(lookup.newHashMap2Corner, title);
     //
-    // // All times in IDE, faster (?) from terminal.
-    // // V0 time: 105270 ms
-    // // V1 time:  76356 ms # Using an array for keys
-    // // V2 time:  19335 ms # Using a set to store seen values
+    // RubiksCube cube;
+    // cube.shuffle(50);
+    // std::cout << "Starting solve..\n";
     //
-    // findBestMagicNumber(arrayBase);
-    // return 1;
+    // auto moves = Solver::solveUpTo2CornersUsingNewHash(cube, lookup, 4);
+    // std::cout << "Finished solving!\n";
+    // std::cout << "Moves: ";
+    // Move::printMoves(moves);
+
+    // Lookup lookup;
+    // std::string title = "newHashMap2CornerD7";
+    // Lookup::load(lookup.newHashMap2Corner, title);
+
+    // int depth = 7;
+    // std::cout << "Depth: " << depth << "\n";
+    // lookup.generateLookupNewHash2Corner(depth);
+    // std::cout << "\n";
+
+    // std::cout << "Combining..\n";
+    // combineLookups(depth);
+
+    // std::string title = "newHaspMap2CornerD" + std::to_string(depth);
+    // Lookup::save(lookup.newHashMap2Corner, title);
+
+    // RubiksCube cube;
+    // cube.shuffle(100);
+    //
+    // auto solvingMoves = Solver::solveUpTo2CornersUsingNewHash(cube, lookup);
 }

@@ -2,11 +2,11 @@
 #include <iostream>
 #include <chrono>
 #include <fstream>
+#include <ranges>
 
 #include "RubiksLibrary/Move.hpp"
 #include "RubiksLibrary/Lookup.hpp"
-
-#include <ranges>
+#include "RubiksLibrary/InfoLogger.hpp"
 
 uint64_t Lookup::hashF(const std::array<unsigned int, 4> &num, uint32_t seed) {
     uint64_t hash_value = 0x811C9DC5 ^ seed; // FNV offset basis XOR seed
@@ -32,7 +32,7 @@ uint64_t Lookup::hashF(const std::array<unsigned int, 4> &num, uint32_t seed) {
     return hash_value;
 }
 
-bool Lookup::prune(Move &currentMove, Move &prevMove, Move &doublePrevMove) {
+bool Lookup::prune(const Move &currentMove, const Move &prevMove, const Move &doublePrevMove) {
     if (currentMove.face == prevMove.face) { return true;}
 
     if ((currentMove.face == doublePrevMove.face) && (RubiksConst::oppositeFaceAll[currentMove.face] == prevMove.face)) {
@@ -302,6 +302,87 @@ void generateLookupCrossAnd3Corners(
     }
 }
 
+void generateLookupNewHashRec2Corner(
+    std::unordered_map<__int128, std::vector<char>> &map,
+    std::vector<char> &moves,
+    RubiksCube &cube,
+    InfoLogger &logger,
+    const int depth) {
+
+    logger.incrementStates();
+    logger.logg(moves);
+
+    auto hash = cube.hashNew2Corner();
+
+    auto it = map.find(hash);
+    if (it != map.end()) {
+        if (moves.size() < it->second.size()) {
+            it->second = moves; // only assign if smaller
+        }
+    } else {
+        map.emplace(hash, moves); // avoids double lookup
+    }
+
+    const auto size = moves.size();
+    Move prevMove {7, 7};
+    Move doublePrevMove {7, 7};
+
+    if (size > 1) {
+        prevMove = Move(moves[size - 1]);
+        doublePrevMove = Move(moves[size - 2]);
+    } else if (size > 0) {
+        prevMove = Move(moves[size - 1]);
+    }
+
+    if (depth == 1) {return;}
+
+    for (auto m : RubiksConst::everyMove) {
+        if (Lookup::prune(m, prevMove, doublePrevMove)) { continue;}
+
+        moves.push_back(m.move);
+        cube.turn(m);
+        generateLookupNewHashRec2Corner(map, moves, cube, logger, depth - 1);
+        cube.turn(m.face, 4 - m.rotations);
+        moves.pop_back();
+    }
+}
+
+void Lookup::generateLookupNewHash2Corner(const int depth) {
+    const auto start = std::chrono::high_resolution_clock::now();
+
+    std::vector<char> moves;
+    moves.reserve(10);
+    RubiksCube cube;
+    InfoLogger logger;
+
+    // Test splitting it
+    for (auto m : MoveConst::moves) {
+        newHashMap2Corner.clear();
+        newHashMap2Corner[cube.hashNew2Corner()] = moves;
+
+        cube.turn(m);
+        moves.push_back(m);
+        generateLookupNewHashRec2Corner(newHashMap2Corner, moves, cube, logger, depth);
+        Move mov{m};
+        cube.turn(mov.face, 4 - mov.rotations);
+        moves.pop_back();
+
+        std::string title = "newHashMap2CornersMove";
+        title += m;
+        title += "Depth" + std::to_string(depth);
+        Lookup::save(newHashMap2Corner, title);
+    }
+
+    // END Test splitting it
+
+    // generateLookupNewHashRec2Corner(newHashMap2Corner, moves, cube, logger, depth + 1);
+
+    const auto end = std::chrono::high_resolution_clock::now();
+    const auto durLookup = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    std::cout << "Size of newHash (2 Corner) table is " << newHashMap2Corner.size() << " in " << durLookup.count() / 1000 / 1000 << " seconds." << "\n";
+}
+
 void Lookup::makeWholeCube(int depth) {
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -398,6 +479,39 @@ void Lookup::makeCrossAnd3Corners(int depth) {
     convertAndSave(crossAnd3Corners, title);
 }
 
+std::string bigIntToStr(__int128 x) {
+    if (x == 0) {
+        return "0";
+    }
+    std::string s;
+    while (x > 0) {
+        s.push_back('0' + (x % 10));
+        x /= 10;
+    }
+    std::reverse(s.begin(), s.end());
+    return s;
+}
+
+void Lookup::save(std::unordered_map<__int128, std::vector<char>>& map, const std::string& title) {
+    std::ofstream file(static_cast<std::string>(DATA_PATH) + "/" + title + ".txt");
+
+    for (const auto & [fst, snd] : map) {
+        auto s = bigIntToStr(fst);
+
+        for (auto i = 0; i < 36 - s.length(); i++) {
+            file << "A";
+        }
+        file << s;
+
+        for (auto &m : snd) {
+            file << m;
+        }
+
+        file << "\n";
+    }
+    file.close();
+}
+
 void Lookup::save(std::set<std::array<unsigned int, 4>>& map, const std::string& title) {
     std::ofstream file(static_cast<std::string>(DATA_PATH) + "/" + title + ".txt");
 
@@ -416,7 +530,6 @@ void Lookup::save(std::set<std::array<unsigned int, 4>>& map, const std::string&
 
     file.close();
 }
-
 
 void Lookup::save(std::map<std::array<unsigned int, 4>, uint32_t>& map, const std::string& title) {
     std::ofstream file(static_cast<std::string>(DATA_PATH) + "/" + title + ".txt");
@@ -520,6 +633,67 @@ unsigned int create_int(const std::string &str) {
     return i;
 }
 
+static __int128 strToBigInt(const std::string& s) {
+    __int128 res = 0;
+    for (char c : s) {
+        if (c < '0' || c > '9') throw std::invalid_argument("Non-digit in big-int string");
+        res = res * 10 + (c - '0');
+    }
+    return res;
+}
+
+void Lookup::load(std::unordered_map<uint64_t, std::vector<char>>& map, std::string& title) {
+
+}
+
+
+void Lookup::load(std::unordered_map<__int128, std::vector<char>> &map, std::string& title) {
+
+    std::ifstream file(std::string(DATA_PATH) + "/" + title + ".txt");
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + std::string(DATA_PATH) + "/" + title + ".txt");
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.empty()) continue;
+
+        // Ensure line is at least 36 chars (key area); if shorter, skip or handle as error
+        if (line.size() < 36) {
+            // skip malformed line (or throw)
+            continue;
+        }
+
+        // First 36 chars contain padding 'A' and then the decimal string
+        std::string keyField = line.substr(0, 36);
+
+        // find first non-'A' character
+        std::size_t pos = 0;
+        while (pos < keyField.size() && keyField[pos] == 'A') ++pos;
+
+        std::string keyNumStr;
+        if (pos < keyField.size()) {
+            keyNumStr = keyField.substr(pos); // the decimal string for the big int
+        } else {
+            // If entire field is 'A' (unlikely), treat as zero
+            keyNumStr = "0";
+        }
+
+        // Convert to __int128
+        __int128 key = strToBigInt(keyNumStr);
+
+        // The remainder of the line (from index 36 to end) are the stored bytes
+        std::vector<char> value;
+        if (line.size() > 36) {
+            value.assign(line.begin() + 36, line.end());
+        }
+
+        map.emplace(key, std::move(value));
+    }
+
+    file.close();
+}
+
 void Lookup::load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map, std::string &title) {
     std::ifstream file(title);
     if (!file.is_open()) {
@@ -527,6 +701,7 @@ void Lookup::load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map,
     }
 
     std::string text;
+    int iteration = 0;
 
     while (std::getline(file, text)) {
         std::array<unsigned int, 4> key = {0, 0, 0, 0};
@@ -547,6 +722,11 @@ void Lookup::load(std::map<std::array<unsigned int, 4>, std::vector<char>> &map,
         }
 
         map[key] = moves;
+
+        iteration++;
+        if (iteration % 100000 == 0) {
+            std::cout << "Ix: " << iteration << " => " << 100.0 * static_cast<double>(iteration) / 53000000.0 << "%\n";
+        }
     }
 
     file.close();
@@ -600,7 +780,6 @@ uint64_t Lookup::getSize(std::map<std::array<unsigned int, 4>, uint32_t>& map) {
     std::cout << "Num entries: " << numEntries << " | Size: " << static_cast<double>(total) / (1024.0 * 1024.0 * 1024.0) << "GB.\n";
     return total;
 }
-
 
 size_t Lookup::getSize(std::map<std::array<unsigned int, 4>, std::vector<char>>& map) {
     size_t total = 0;
