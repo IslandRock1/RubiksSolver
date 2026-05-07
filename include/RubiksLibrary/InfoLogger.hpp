@@ -13,9 +13,7 @@ private:
 	int _counter = 0;
 	std::chrono::system_clock::time_point _prevPrintTime;
 
-	bool _hasStartTime = false;
-	std::chrono::system_clock::time_point _startTime;
-	double _startProgress;
+	double _prevProgress;
 	unsigned long long _statesVisited = 0;
 };
 

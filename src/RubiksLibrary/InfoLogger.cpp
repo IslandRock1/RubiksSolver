@@ -46,21 +46,12 @@ void InfoLogger::logg(const std::vector<char>& moves) {
 	// --- Progress ---
 	double percent = progressPercent(moves);
 
-	// --- ETA calculation ---
-	if (!_hasStartTime) {
-		_startTime = now;
-		_startProgress = percent;
-		_hasStartTime = true;
-	}
-
-	double elapsedSec = std::chrono::duration_cast<std::chrono::seconds>(now - _startTime).count();
-	double progressDone = percent - _startProgress;
-	double etaSec = -1.0;
-
-	if (progressDone > 0.0) {
-		double totalSecEstimate = elapsedSec * (100.0 - _startProgress) / progressDone;
-		etaSec = totalSecEstimate - elapsedSec;
-	}
+	double elapsedSec = duration;
+	double progressSinceLastIter = percent - _prevProgress;
+	double percentPerMS = progressSinceLastIter / static_cast<double>(duration);
+	double remainingMilliSecEstimate = elapsedSec * (100.0 - percent) / percentPerMS;
+	double remainingSecEstimate = remainingMilliSecEstimate / 1000.0;
+	_prevProgress = percent;
 
 	double statesPerSec = 1000.0 * static_cast<double>(_statesVisited) / static_cast<double>(duration);
 	_statesVisited = 0;
@@ -72,13 +63,13 @@ void InfoLogger::logg(const std::vector<char>& moves) {
 	std::cout << "States/sec: " << std::setw(10) << statesPerSec << " | ";
 
 	// ETA formatting
-	if (etaSec >= 0.0) {
-		int h = static_cast<int>(etaSec / 3600.0);
-		int m = static_cast<int>(std::fmod(etaSec / 60.0, 60.0));
-		int s = static_cast<int>(std::fmod(etaSec, 60.0));
+	if (remainingSecEstimate >= 0.0) {
+		int h = static_cast<int>(remainingSecEstimate / 3600.0);
+		int m = static_cast<int>(std::fmod(remainingSecEstimate / 60.0, 60.0));
+		int s = static_cast<int>(std::fmod(remainingSecEstimate, 60.0));
 
 		std::cout << "ETA: ";
-		std::cout << std::setw(2) << std::setfill('0') << h << "h ";
+		std::cout << std::setw(3) << std::setfill('0') << h << "h ";
 		std::cout << std::setw(2) << std::setfill('0') << m << "m ";
 		std::cout << std::setw(2) << std::setfill('0') << s << "s | ";
 	} else {
